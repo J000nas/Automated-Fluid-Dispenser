@@ -18,5 +18,5 @@ Dieses Projekt wurde mit **VS Code & PlatformIO** erstellt.
 * `src/` - Enthält die Hauptlogik (`main.cpp`)
 * `include/` - Enthält die Konfigurationsdatei (`config.h`) mit allen Pin-Belegungen und Schwellenwerten.
 * `lib/` - Für lokale Bibliotheken.
-* `Dokumente/` - *(folgt)* 3D-Druck-Dateien (.stl) und Schaltpläne.
+* `Dokumente/` - 3D-Druck-Dateien (.stl) und Schaltpläne.
 
