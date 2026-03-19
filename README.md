@@ -1,4 +1,4 @@
-# 🚜 Automated Fluid Dispenser (Project: Barvester)
+# 🚜 Automated Fluid Dispenser (Schnapshäcksler)
 
 Ein automatisiertes, kapazitives Getränke-Abfüllsystem im Maßstab 1:32, verpackt in der Optik eines landwirtschaftlichen Feldhäckslers. 
 
@@ -11,15 +11,6 @@ Dieses Projekt kombiniert 3D-Druck, Mikrocontroller-Programmierung (C++/Arduino)
 * **Präzise Mechanik:** Ein Servo-Motor steuert den Auswurf-Arm (den "Häcksler-Turm") exakt über den jeweiligen Stellplatz.
 * **Automatischer Pumpvorgang:** Eine 12V-Pumpe fördert die Flüssigkeit auf den Milliliter genau.
 
-## 🛠️ Hardware & Komponenten
-
-* **Mikrocontroller:** Arduino Nano / Uno (programmiert via PlatformIO)
-* **Sensorik:** Kupferband (als kapazitiver Sensor) & 1-10M Ohm Widerstände
-* **Aktorik:** 1x Servo-Motor (für den Arm), 1x 12V DC Pumpe
-* **Beleuchtung:** WS2811 5mm "Hat-Type" LEDs 
-* **Elektronik:** Step-Down Converter, MOSFET/Relais für die Pumpe, Freilaufdiode
-* **Gehäuse:** Eigens konstruierte 3D-Druck-Teile (Zahnrad-Design mit doppeltem Boden / Licht-Diffusor)
-
 ## 📂 Projektstruktur (PlatformIO)
 
 Dieses Projekt wurde mit **VS Code & PlatformIO** erstellt.
@@ -27,11 +18,5 @@ Dieses Projekt wurde mit **VS Code & PlatformIO** erstellt.
 * `src/` - Enthält die Hauptlogik (`main.cpp`)
 * `include/` - Enthält die Konfigurationsdatei (`config.h`) mit allen Pin-Belegungen und Schwellenwerten.
 * `lib/` - Für lokale Bibliotheken.
-* `Hardware_und_Mechanik/` - *(folgt)* 3D-Druck-Dateien (.stl) und Schaltpläne.
+* `Dokumente/` - *(folgt)* 3D-Druck-Dateien (.stl) und Schaltpläne.
 
-## 🚀 Status
-* [x] Konzept & Schaltplan
-* [x] 3D-Druck Prototyp (Stellplatz & Lichtkammer)
-* [x] Software-Grundgerüst (PlatformIO Setup)
-* [ ] C++ Code Migration & Sensor-Kalibrierung
-* [ ] Finaler Zusammenbau
