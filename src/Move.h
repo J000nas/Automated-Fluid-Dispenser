@@ -33,8 +33,11 @@ public:
 
     void detach();
 
+    void detachIfIdle();
+
 
 private:
+    int getSpotIndex(int pos) const;
     MoToServo _servo1;
 };
 

@@ -7,16 +7,16 @@
 #include <api/Common.h>
 
 AnalogLimit::AnalogLimit() {
-    for (int i=0; i<5;i++) {
+    for (int i=0; i<NUM_SPOTS;i++) {
         limits[i]=888;
     }
 }
 
 void AnalogLimit::calibrate() {
-    for (int i=0; i<5;i++) {
+    for (int i=0; i<NUM_SPOTS;i++) {
         int temp = 0;
         for (int j=0; j<10; j++) {
-            temp += analogRead(i);
+            temp += analogRead(PIN_SENSORS[i]);
             delay(10);
         }
         limits[i] = (temp/10)-30;

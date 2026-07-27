@@ -14,11 +14,11 @@ Move::Move(){
 
 /* --Methode zum Abrufen vom Status der Sensoren */
 void Move::status(Queue& queue, LedControl& led, AnalogLimit& analogLimit) {
-    static bool lastSensorState[5] = {false};
-    static bool sensorTriggered[5] = {false};
-    static unsigned long sensorActiveSince[5] = {0};
+    static bool lastSensorState[NUM_SPOTS] = {false};
+    static bool sensorTriggered[NUM_SPOTS] = {false};
+    static unsigned long sensorActiveSince[NUM_SPOTS] = {0};
 
-    for (int i = 0; i < queue.size(); i++) {
+    for (int i = 0; i < NUM_SPOTS; i++) {
         bool value;
 
         if (analogRead(PIN_SENSORS[i])<= analogLimit.getValue(i)) {
@@ -101,8 +101,6 @@ void Move::pump() {
 void Move::run(Queue& queue, LedControl& led) {
     static enum State { IDLE, MOVING, WAITING_PUMP, WAITING_NEXT } state = IDLE;
     static unsigned long lastMoveTime = 0;
-    const long waitTime = 11000;
-    const long waitTimePump = 10000;
 
     static long lastTarget = -1;  // [GEÄNDERT] Letzte tatsächlich angefahrene Position
 
@@ -116,12 +114,12 @@ void Move::run(Queue& queue, LedControl& led) {
                     Serial.println(nextPos);
                     state = MOVING;
                 } else {
-                    Serial.println("[RUN] Fehler: Ungültige Position (-1) erkannt.");
+                    Serial.println("[RUN] Fehler: Ungueltige Position (-1) erkannt.");
                 }
             } else {
                 if (_servo1.read() != 0) {
                     _servo1.write(0);
-                    Serial.println("[RUN] Warteschlange leer, Motor fährt zurück auf 0.");
+                    Serial.println("[RUN] Warteschlange leer, Motor faehrt zurueck auf 0.");
                 }
                 digitalWrite(PIN_PUMP_RELAY, LOW);
             }
@@ -137,45 +135,45 @@ void Move::run(Queue& queue, LedControl& led) {
 
                 long nextPos = queue.getNextPosition();
                 if (nextPos >= 0) {
-                    if (nextPos == SERVO_POS[0]) led.setColor(1, CRGB::Yellow);
-                    else if (nextPos == SERVO_POS[1]) led.setColor(2, CRGB::Yellow);
-                    else if (nextPos == SERVO_POS[2]) led.setColor(3, CRGB::Yellow);
-                    else if (nextPos == SERVO_POS[3]) led.setColor(4, CRGB::Yellow);
-                    else if (nextPos == SERVO_POS[4]) led.setColor(5, CRGB::Yellow);
-                    else Serial.println("[RUN] Warnung: Position unbekannt."); // [GEÄNDERT]
+                    int spotIdx = getSpotIndex(nextPos);
+                    if (spotIdx >= 0) {
+                        led.setColor(spotIdx + 1, CRGB::Yellow);
+                    } else {
+                        Serial.println(F("[RUN] Warnung: Position unbekannt."));
+                    }
                     digitalWrite(PIN_PUMP_RELAY, HIGH);
                     lastMoveTime = millis();
                     state = WAITING_PUMP;
                 } else {
-                    Serial.println("[RUN] Fehler: Keine gültige nächste Position."); // [GEÄNDERT]
+                    Serial.println("[RUN] Fehler: Keine gueltige naechste Position."); // [GEÄNDERT]
                     state = IDLE;
                 }
             }
             break;
 
         case WAITING_PUMP:
-            if (millis() - lastMoveTime >= waitTimePump) {
+            if (millis() - lastMoveTime >= WAIT_TIME_PUMP) {
                 digitalWrite(PIN_PUMP_RELAY, LOW);
                 Serial.println("[RUN] Pumpzeit abgelaufen, Pumpe deaktiviert.");
                 long nextPos = queue.getNextPosition();
                 if (nextPos >= 0) {
-                    if (nextPos == SERVO_POS[0]) led.setColor(1, CRGB::Green);
-                    else if (nextPos == SERVO_POS[1]) led.setColor(2, CRGB::Green);
-                    else if (nextPos == SERVO_POS[2]) led.setColor(3, CRGB::Green);
-                    else if (nextPos == SERVO_POS[3]) led.setColor(4, CRGB::Green);
-                    else if (nextPos == SERVO_POS[4]) led.setColor(5, CRGB::Green);
-                    else Serial.println("[RUN] Warnung: Position unbekannt.");
+                    int spotIdx = getSpotIndex(nextPos);
+                    if (spotIdx >= 0) {
+                        led.setColor(spotIdx + 1, CRGB::Green);
+                    } else {
+                        Serial.println(F("[RUN] Warnung: Position unbekannt."));
+                    }
                     state = WAITING_NEXT;
                 } else {
-                    Serial.println("[RUN] Fehler: Position ungültig nach Pumpzeit.");
+                    Serial.println("[RUN] Fehler: Position ungueltig nach Pumpzeit.");
                     state = IDLE;
                 }
             }
             break;
 
         case WAITING_NEXT:
-            if (millis() - lastMoveTime >= waitTime) {
-                Serial.println("[RUN] Gesamte Wartezeit abgelaufen, nächste Position.");
+            if (millis() - lastMoveTime >= WAIT_TIME) {
+                Serial.println("[RUN] Gesamte Wartezeit abgelaufen, naechste Position.");
 
                 // [DEBUG] aktuelle Position vor Queue-Wechsel
                 Serial.print("[DEBUG] Vor Queue.popFront() – Position: ");
@@ -198,6 +196,13 @@ void Move::detach() {
     _servo1.detach();
 }
 
+void Move::detachIfIdle() {
+    if (_servo1.attached() && _servo1.read() == 0 && _servo1.moving() == 0) {
+        _servo1.detach();
+        Serial.println(F("[MOVE] Servo erfolgreich im Leerlauf abgekoppelt."));
+    }
+}
+
 void Move::attach(int pin) {
     _servo1.attach(pin); //Pin 9
     _servo1.setSpeedTime(1100);
@@ -207,4 +212,13 @@ void Move::attach(int pin) {
 void Move::begin() {
     pinMode(PIN_PUMP_RELAY, OUTPUT);
     pinMode(PIN_PUMP_TASTER, INPUT_PULLUP);
+}
+
+int Move::getSpotIndex(int pos) const {
+    for (int i = 0; i < NUM_SPOTS; i++) {
+        if (SERVO_POS[i] == pos) {
+            return i;
+        }
+    }
+    return -1;
 }

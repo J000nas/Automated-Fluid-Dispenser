@@ -36,6 +36,10 @@ void LedControl::ledStart(const CRGB& col) {
 void LedControl::setColor(int pos, const CRGB &col){
     int index1 = 2 * pos - 1;
     int index2 = index1 - 1;
+    if (pos < 1 || index1 >= _numLeds || index2 < 0) {
+        Serial.println(F("[LED] Fehler: Ungueltige Position fuer setColor."));
+        return;
+    }
     leds[index1] = col;
     leds[index2] = col;
     FastLED.show();

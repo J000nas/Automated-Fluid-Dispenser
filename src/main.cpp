@@ -27,8 +27,15 @@ void setup() {
 }
 
 void loop() {
-    if (TasterStart()) {
-        move.attach(PIN_SERVO);
+    static bool wasRunning = false;
+    bool running = TasterStart();
+
+    if (running) {
+        if (!wasRunning) {
+            move.attach(PIN_SERVO);
+            wasRunning = true;
+            Serial.println(F("[MAIN] System gestartet - Servo angekoppelt."));
+        }
         
         if (first) {
             first = false;
@@ -46,7 +53,10 @@ void loop() {
         delay(50);
 
     } else {
-        move.detach();
+        if (wasRunning) {
+            wasRunning = false;
+            Serial.println(F("[MAIN] System gestoppt - Fahre zurueck auf Position 0..."));
+        }
         first = true;
 
         if (help_pump) {
@@ -54,6 +64,8 @@ void loop() {
             help_pump = false;
             move.toZero();
         }
+        
+        move.detachIfIdle();
         
         if (toggleInInterval(BLINK_INTERVAL)) {
             digitalWrite(PIN_START_TASTER_LAMP, LOW);

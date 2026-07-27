@@ -12,17 +12,17 @@ bool TasterStart() {
 
     bool buttonStartRead = digitalRead(PIN_START_TASTER);
 
-    // Taster wird gedrückt
+    // Taster ist nicht gedrueckt (Pin ist durch Pullup HIGH)
     if (buttonStartRead) {
         buttonStartMillis = millis();
     }
 
-    // Entprellung: Taster wurde losgelassen, nach kurzem Druck
+    // Entprellung: Taster wurde gedrueckt (Pin geht LOW) und fuer mind. 20ms gehalten
     if (!buttonStartRead && !buttonStartOn && millis() - buttonStartMillis > 20) {
         buttonStartOn = true;
     }
 
-    // Taster wurde vollständig losgelassen
+    // Taster wurde wieder losgelassen (Pin geht wieder HIGH)
     if (buttonStartRead && buttonStartOn) {
         buttonStartOn = false;
         toggleState = !toggleState;  // Umschalten

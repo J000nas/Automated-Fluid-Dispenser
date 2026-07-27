@@ -5,7 +5,7 @@
 #ifndef ANALOGLIMIT_H
 #define ANALOGLIMIT_H
 
-
+#include "config.h"
 
 class AnalogLimit {
 public:
@@ -15,7 +15,7 @@ public:
 
     int getValue(int position) const;
 private:
-    int limits[5];
+    int limits[NUM_SPOTS];
 
 
 };
