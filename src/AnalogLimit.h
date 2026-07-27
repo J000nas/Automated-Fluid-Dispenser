@@ -32,8 +32,8 @@ public:
    * @param position Stellplatz-Index (0 bis NUM_SPOTS - 1)
    * @return Kalibrierter Grenzwert als Analogwert (0 bis 1023)
    */
-  int getValue(int position) const;
+  uint16_t getValue(uint8_t position) const;
 
 private:
-  int limits[NUM_SPOTS]; ///< Gespeicherte Schwellenwerte für die Stellplätze
+  uint16_t limits[NUM_SPOTS]; ///< Gespeicherte Schwellenwerte für die Stellplätze
 };

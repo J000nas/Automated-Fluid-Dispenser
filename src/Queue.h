@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 /**
  * @class Queue
  * @brief Verwaltet eine First-In-First-Out (FIFO) Warteschlange für die
@@ -17,7 +19,7 @@ public:
    * Kapazität.
    * @param size Maximale Kapazität der Warteschlange (z. B. 5).
    */
-  Queue(int size);
+  Queue(uint8_t size);
 
   /**
    * @brief Destruktor. Gibt den dynamisch reservierten Speicher für das
@@ -34,7 +36,7 @@ public:
    * @return true, wenn der Eintrag erfolgreich hinzugefügt wurde, false, wenn
    * er bereits existiert oder die Queue voll ist.
    */
-  bool addToQueue(int position);
+  bool addToQueue(uint8_t position);
 
   /**
    * @brief Entfernt eine Servoposition an einer beliebigen Stelle in der
@@ -46,7 +48,7 @@ public:
    *
    * @param position Die zu entfernende Servoposition (in Grad).
    */
-  void removeFromQueue(int position);
+  void removeFromQueue(uint8_t position);
 
   /**
    * @brief Gibt die aktuelle Warteschlange formatiert auf der seriellen
@@ -75,19 +77,19 @@ public:
    * @return Die Servoposition an erster Stelle, oder -1, wenn die Warteschlange
    * leer ist.
    */
-  int getNextPosition() const;
+  int16_t getNextPosition() const;
 
   /**
    * @brief Gibt die maximale Kapazität (Größe) der Warteschlange zurück.
    * @return Die maximale Anzahl an Elementen.
    */
-  int size() const { return _size; }
+  uint8_t size() const { return _size; }
 
   /**
    * @brief Gibt die aktuelle Anzahl der Elemente in der Warteschlange zurück.
    * @return Anzahl der belegten Plätze in der Queue.
    */
-  int queueSize() const { return _queueSize; }
+  uint8_t queueSize() const { return _queueSize; }
 
   /**
    * @brief Entfernt das erste Element (pop) an der Spitze der Warteschlange.
@@ -99,10 +101,10 @@ public:
   void popFront();
 
 private:
-  int *_positionQueue; ///< Zeiger auf das dynamisch allozierte Array zur
+  uint8_t *_positionQueue; ///< Zeiger auf das dynamisch allozierte Array zur
                        ///< Speicherung der Servowinkel
-  int _size;           ///< Maximale Kapazität der Warteschlange
-  int _queueSize;      ///< Aktuelle Anzahl an Einträgen in der Warteschlange
+  uint8_t _size;           ///< Maximale Kapazität der Warteschlange
+  uint8_t _queueSize;      ///< Aktuelle Anzahl an Einträgen in der Warteschlange
   unsigned long _millisLastUpdate; ///< Letzter Zeitstempel der seriellen
                                    ///< Ausgabe für die Taktbegrenzung
 };

@@ -2,7 +2,7 @@
 
 Move::Move() {
   // Richtet alle analogen Sensor-Pins als Eingang mit Pullup-Widerständen ein
-  for (int i : PIN_SENSORS) {
+  for (uint8_t i : PIN_SENSORS) {
     pinMode(i, INPUT_PULLUP);
   }
 }
@@ -13,7 +13,7 @@ void Move::status(Queue &queue, LedControl &led, AnalogLimit &analogLimit) {
   static bool sensorTriggered[NUM_SPOTS] = {false};
   static unsigned long sensorActiveSince[NUM_SPOTS] = {0};
 
-  for (int i = 0; i < NUM_SPOTS; i++) {
+  for (uint8_t i = 0; i < NUM_SPOTS; i++) {
     bool value;
 
     // Wenn der analoge Sensorwert kleiner oder gleich dem kalibrierten
@@ -53,7 +53,7 @@ void Move::status(Queue &queue, LedControl &led, AnalogLimit &analogLimit) {
 }
 
 void Move::moveToNext(const Queue &queue) {
-  int targetPos = queue.getNextPosition();
+  int16_t targetPos = queue.getNextPosition();
   if (targetPos >= 0) {
     // Nur anfahren, wenn sich der Servo nicht bereits bewegt
     if (!_servo1.moving()) {
@@ -98,13 +98,13 @@ void Move::run(Queue &queue, LedControl &led) {
   // Zustände der State-Machine zur sequentiellen Ablaufsteuerung der Abfüllung
   static enum State { IDLE, MOVING, WAITING_PUMP, WAITING_NEXT } state = IDLE;
   static unsigned long lastMoveTime = 0;
-  static long lastTarget = -1; // Letzte tatsächlich angefahrene Position
+  static int16_t lastTarget = -1; // Letzte tatsächlich angefahrene Position
 
   switch (state) {
   case IDLE:
     // Prüfen, ob Aufträge in der Warteschlange vorliegen
     if (queue.queueSize() > 0) {
-      long nextPos = queue.getNextPosition();
+      int16_t nextPos = queue.getNextPosition();
       if (nextPos >= 0) {
         _servo1.write(nextPos); // Servo fährt zur ersten Position
         Serial.print("[RUN] Neue Position angefordert: ");
@@ -133,9 +133,9 @@ void Move::run(Queue &queue, LedControl &led) {
       Serial.print("[DEBUG] Erreichte Position: ");
       Serial.println(_servo1.read());
 
-      long nextPos = queue.getNextPosition();
+      int16_t nextPos = queue.getNextPosition();
       if (nextPos >= 0) {
-        int spotIdx = getSpotIndex(nextPos);
+        int8_t spotIdx = getSpotIndex((uint8_t)nextPos);
         if (spotIdx >= 0) {
           led.setColor(spotIdx + 1,
                        CRGB::Yellow); // LED gelb leuchten lassen (wird befüllt)
@@ -159,9 +159,9 @@ void Move::run(Queue &queue, LedControl &led) {
       digitalWrite(PIN_PUMP_RELAY, LOW); // Pumpe stoppen
       Serial.println("[RUN] Pumpzeit abgelaufen, Pumpe deaktiviert.");
 
-      long nextPos = queue.getNextPosition();
+      int16_t nextPos = queue.getNextPosition();
       if (nextPos >= 0) {
-        int spotIdx = getSpotIndex(nextPos);
+        int8_t spotIdx = getSpotIndex((uint8_t)nextPos);
         if (spotIdx >= 0) {
           led.setColor(
               spotIdx + 1,
@@ -212,7 +212,7 @@ void Move::detachIfIdle() {
   }
 }
 
-void Move::attach(int pin) {
+void Move::attach(uint8_t pin) {
   _servo1.attach(pin); // Servo wieder an Pin koppeln
   _servo1.setSpeedTime(
       1100); // Fahrzeit für 180 Grad auf 1.1s festlegen (sanfte Fahrt)
@@ -225,10 +225,10 @@ void Move::begin() {
                LOW); // Sicherstellen, dass das Relais zu Beginn aus ist
 }
 
-int Move::getSpotIndex(int pos) const {
+int8_t Move::getSpotIndex(uint8_t pos) const {
   // Sucht den Stellplatz-Index (0 bis NUM_SPOTS-1) für eine gegebene
   // Servoposition
-  for (int i = 0; i < NUM_SPOTS; i++) {
+  for (uint8_t i = 0; i < NUM_SPOTS; i++) {
     if (SERVO_POS[i] == pos) {
       return i;
     }

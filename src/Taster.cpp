@@ -33,7 +33,7 @@ bool TasterStart() {
   return toggleState; // Standardmäßig den aktuellen Zustand zurückgeben
 }
 
-bool toggleInInterval(unsigned long interval) {
+bool toggleInInterval(uint16_t interval) {
   static bool state = false;
   static unsigned long lastToggleTime = 0;
 

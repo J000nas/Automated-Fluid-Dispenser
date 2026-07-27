@@ -1,14 +1,14 @@
 #include "Queue.h"
 #include <Arduino.h>
 
-Queue::Queue(int size) {
+Queue::Queue(uint8_t size) {
   _size = size;
   _queueSize = 0;
   _millisLastUpdate = 0;
 
   // Dynamisches Array zur Speicherung der Servopositionen anlegen
-  _positionQueue = new int[_size];
-  for (int i = 0; i < _size; i++) {
+  _positionQueue = new uint8_t[_size];
+  for (uint8_t i = 0; i < _size; i++) {
     _positionQueue[i] = 0; // Zu Beginn alle Plätze nullen
   }
 }
@@ -17,10 +17,10 @@ Queue::~Queue() {
   delete[] _positionQueue; // Speicher freigeben, um Memory Leaks zu vermeiden
 }
 
-bool Queue::addToQueue(int position) {
+bool Queue::addToQueue(uint8_t position) {
   // Prüfen, ob sich die gewünschte Position bereits in der Warteschlange
   // befindet
-  for (int i = 0; i < _queueSize; i++) {
+  for (uint8_t i = 0; i < _queueSize; i++) {
     if (_positionQueue[i] == position) {
       return false; // Bereits enthalten, nicht nochmals hinzufügen
     }
@@ -35,12 +35,12 @@ bool Queue::addToQueue(int position) {
   return false; // Warteschlange ist voll
 }
 
-void Queue::removeFromQueue(int position) {
+void Queue::removeFromQueue(uint8_t position) {
   // Sucht das Element in der Queue
-  for (int i = 0; i < _queueSize; i++) {
+  for (uint8_t i = 0; i < _queueSize; i++) {
     if (_positionQueue[i] == position) {
       // Nachfolgende Elemente um eine Position nach vorne verschieben
-      for (int j = i; j < _queueSize - 1; j++) {
+      for (uint8_t j = i; j < _queueSize - 1; j++) {
         _positionQueue[j] = _positionQueue[j + 1];
       }
       _queueSize--;                   // Größe verringern
@@ -60,7 +60,7 @@ void Queue::printQueue() {
     _millisLastUpdate = currentMillis;
 
     Serial.println("Warteschlange: ");
-    for (int i = 0; i < _queueSize; i++) {
+    for (uint8_t i = 0; i < _queueSize; i++) {
       Serial.print("Position ");
       Serial.print(i + 1);
       Serial.print(": ");
@@ -70,7 +70,7 @@ void Queue::printQueue() {
   }
 }
 
-int Queue::getNextPosition() const {
+int16_t Queue::getNextPosition() const {
   // Liefert das vorderste Element (Index 0), falls vorhanden
   if (_queueSize > 0) {
     return _positionQueue[0];
@@ -84,7 +84,7 @@ void Queue::popFront() {
     return;
 
   // Alle verbleibenden Elemente um eine Position nach vorne rücken
-  for (int i = 0; i < _queueSize - 1; i++) {
+  for (uint8_t i = 0; i < _queueSize - 1; i++) {
     _positionQueue[i] = _positionQueue[i + 1];
   }
   _queueSize--; // Größe verringern

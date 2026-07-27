@@ -26,4 +26,4 @@ bool TasterStart();
  * @param interval Blink-Intervall in Millisekunden.
  * @return true in der einen Hälfte des Intervalls, false in der anderen Hälfte.
  */
-bool toggleInInterval(unsigned long interval);
+bool toggleInInterval(uint16_t interval);

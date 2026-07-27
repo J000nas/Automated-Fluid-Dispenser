@@ -19,7 +19,7 @@ public:
    * die Helligkeit.
    * @param num Anzahl der anzusteuernden LEDs insgesamt.
    */
-  LedControl(int num);
+  LedControl(uint8_t num);
 
   /**
    * @brief Destruktor. Gibt den dynamisch reservierten LED-Speicher frei.
@@ -38,14 +38,14 @@ public:
    * @param col Die anzuzeigende Farbe (z. B. Rot = Becher erkannt, Gelb = Wird
    * befüllt, Grün = Fertig).
    */
-  void setColor(int pos, const CRGB &col);
+  void setColor(uint8_t pos, const CRGB &col);
 
   /**
    * @brief Lässt alle LEDs in einer bestimmten Farbe blinken.
    * @param interval Blink-Intervall in Millisekunden.
    * @param col Die Blinkfarbe.
    */
-  void blink(int interval, const CRGB &col);
+  void blink(uint16_t interval, const CRGB &col);
 
   /**
    * @brief Schaltet alle LEDs aus (setzt sie auf Schwarz).
@@ -64,10 +64,10 @@ private:
    * (nicht-blockierend).
    * @param interval Blink-Intervall in Millisekunden.
    */
-  void blinker(int interval);
+  void blinker(uint16_t interval);
 
   CRGB *leds;    ///< Dynamisches Array für den Zustand der einzelnen LEDs
-  int _numLeds;  ///< Gesamtzahl der LEDs auf dem Streifen
+  uint8_t _numLeds;  ///< Gesamtzahl der LEDs auf dem Streifen
   bool _blinker; ///< Aktueller Blink-Zustand (an/aus)
   unsigned long _blinkerMillis; ///< Zeitstempel des letzten Zustandswechsels
                                 ///< für das Blinken

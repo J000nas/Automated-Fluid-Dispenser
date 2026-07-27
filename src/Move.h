@@ -90,7 +90,7 @@ public:
    * Stellgeschwindigkeit.
    * @param pin GPIO-Pin des Servos.
    */
-  void attach(int pin);
+  void attach(uint8_t pin);
 
   /**
    * @brief Trennt die Verbindung zum Servo (deaktiviert das PWM-Signal).
@@ -112,7 +112,7 @@ private:
    * @param pos Der Servowinkel (in Grad).
    * @return Stellplatz-Index oder -1, wenn der Winkel ungültig ist.
    */
-  int getSpotIndex(int pos) const;
+  int8_t getSpotIndex(uint8_t pos) const;
 
   MoToServo
       _servo1; ///< Der MobaTools-Servo für die physische Arm-Positionierung

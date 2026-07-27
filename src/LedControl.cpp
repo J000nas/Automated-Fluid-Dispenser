@@ -1,6 +1,6 @@
 #include "LedControl.h"
 
-LedControl::LedControl(int num)
+LedControl::LedControl(uint8_t num)
     : _numLeds(num), _blinker(false), _blinkerMillis(0) {
   leds = new CRGB[_numLeds]; // Dynamischen Speicher für die LEDs reservieren
 
@@ -20,9 +20,9 @@ void LedControl::ledStart(const CRGB &col) {
 
   // Animation: Die LEDs leuchten stellplatzweise (jeweils LEDS_PER_SPOT LEDs pro Stellplatz)
   // nacheinander auf
-  for (int spot = 0; spot < NUM_SPOTS; spot++) {
-    int baseIdx = spot * LEDS_PER_SPOT;
-    for (int i = 0; i < LEDS_PER_SPOT; i++) {
+  for (uint8_t spot = 0; spot < NUM_SPOTS; spot++) {
+    uint8_t baseIdx = spot * LEDS_PER_SPOT;
+    for (uint8_t i = 0; i < LEDS_PER_SPOT; i++) {
       if (baseIdx + i < _numLeds) {
         leds[baseIdx + i] = col;
       }
@@ -32,16 +32,16 @@ void LedControl::ledStart(const CRGB &col) {
   }
 
   // Am Ende der Animation alle LEDs wieder ausschalten (auf Schwarz setzen)
-  for (int i = 0; i < _numLeds; i++) {
+  for (uint8_t i = 0; i < _numLeds; i++) {
     leds[i] = CRGB::Black;
   }
   FastLED.show();
 }
 
-void LedControl::setColor(int pos, const CRGB &col) {
+void LedControl::setColor(uint8_t pos, const CRGB &col) {
   // Da jeder Stellplatz LEDS_PER_SPOT LEDs hat (z. B. Platz 1 -> LED 0 bis 3 bei 4 LEDs/Stellplatz),
   // berechnen wir den Startindex für den LED-Streifen. pos ist 1-basiert.
-  int baseIndex = LEDS_PER_SPOT * (pos - 1);
+  uint8_t baseIndex = LEDS_PER_SPOT * (pos - 1);
 
   // Validierungsprüfung, um Out-Of-Bounds-Zugriffe zu verhindern
   if (pos < 1 || pos > NUM_SPOTS || baseIndex + LEDS_PER_SPOT > _numLeds) {
@@ -50,23 +50,23 @@ void LedControl::setColor(int pos, const CRGB &col) {
   }
 
   // Alle LEDs des Stellplatzes auf die gewünschte Farbe setzen und aktualisieren
-  for (int i = 0; i < LEDS_PER_SPOT; i++) {
+  for (uint8_t i = 0; i < LEDS_PER_SPOT; i++) {
     leds[baseIndex + i] = col;
   }
   FastLED.show();
 }
 
-void LedControl::blink(int interval, const CRGB &col) {
+void LedControl::blink(uint16_t interval, const CRGB &col) {
   blinker(interval); // Internen Zustand der Blink-Variable aktualisieren
 
   // Alle LEDs auf Basis des Blink-Zustands ein- oder ausschalten
-  for (int i = 0; i < _numLeds; i++) {
+  for (uint8_t i = 0; i < _numLeds; i++) {
     leds[i] = _blinker ? col : CRGB::Black;
   }
   FastLED.show();
 }
 
-void LedControl::blinker(int interval) {
+void LedControl::blinker(uint16_t interval) {
   unsigned long currentMillis = millis();
 
   // Nicht-blockierender Timer für das Umschalten des Blinkzustands (Toggle)
@@ -78,7 +78,7 @@ void LedControl::blinker(int interval) {
 
 void LedControl::clear() {
   // Alle LEDs auf Schwarz setzen (ausschalten)
-  for (int i = 0; i < _numLeds; ++i) {
+  for (uint8_t i = 0; i < _numLeds; ++i) {
     leds[i] = CRGB::Black;
   }
   FastLED.show();
@@ -86,7 +86,7 @@ void LedControl::clear() {
 
 void LedControl::setAll(const CRGB &col) {
   // Alle LEDs gleichzeitig auf dieselbe Farbe setzen
-  for (int i = 0; i < _numLeds; ++i) {
+  for (uint8_t i = 0; i < _numLeds; ++i) {
     leds[i] = col;
   }
   FastLED.show();
