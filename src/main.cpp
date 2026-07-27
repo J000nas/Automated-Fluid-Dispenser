@@ -14,7 +14,7 @@ bool help_pump = false; ///< Hilfsflagge, um beim Stoppen die Pumpe abzuschalten
 
 Queue queue(5); ///< Warteschlange für die Stellplätze (Größe = 5 Stellplätze)
 LedControl
-    led(10); ///< Steuerung für die 10 LEDs (jeweils 2 LEDs pro Stellplatz)
+    led(TOTAL_LEDS); ///< Steuerung für die LEDs (konfiguriert via config.h)
 Move move;   ///< Ablauf- und Bewegungssteuerung (Servo-Motor & Pumpe)
 AnalogLimit
     analogLimit; ///< Kalibrierung und Grenzwertverwaltung der analogen Sensoren

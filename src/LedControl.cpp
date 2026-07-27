@@ -18,12 +18,14 @@ LedControl::~LedControl() {
 void LedControl::ledStart(const CRGB &col) {
   clear(); // Zuerst alle LEDs ausschalten
 
-  // Animation: Die LEDs leuchten paarweise (jeweils 2 LEDs pro Stellplatz)
+  // Animation: Die LEDs leuchten stellplatzweise (jeweils LEDS_PER_SPOT LEDs pro Stellplatz)
   // nacheinander auf
-  for (int i = 0; i < _numLeds; i += 2) {
-    leds[i] = col;
-    if (i + 1 < _numLeds) {
-      leds[i + 1] = col;
+  for (int spot = 0; spot < NUM_SPOTS; spot++) {
+    int baseIdx = spot * LEDS_PER_SPOT;
+    for (int i = 0; i < LEDS_PER_SPOT; i++) {
+      if (baseIdx + i < _numLeds) {
+        leds[baseIdx + i] = col;
+      }
     }
     FastLED.show();
     delay(600); // Kurze Verzögerung für den visuellen Effekt
@@ -37,22 +39,20 @@ void LedControl::ledStart(const CRGB &col) {
 }
 
 void LedControl::setColor(int pos, const CRGB &col) {
-  // Da jeder Stellplatz zwei LEDs hat (z. B. Platz 1 -> LED 0 und 1, Platz 2 ->
-  // LED 2 und 3, etc.), berechnen wir die Indizes für den LED-Streifen. pos ist
-  // 1-basiert.
-  int index1 = 2 * pos - 1;
-  int index2 = index1 - 1;
+  // Da jeder Stellplatz LEDS_PER_SPOT LEDs hat (z. B. Platz 1 -> LED 0 bis 3 bei 4 LEDs/Stellplatz),
+  // berechnen wir den Startindex für den LED-Streifen. pos ist 1-basiert.
+  int baseIndex = LEDS_PER_SPOT * (pos - 1);
 
   // Validierungsprüfung, um Out-Of-Bounds-Zugriffe zu verhindern
-  if (pos < 1 || index1 >= _numLeds || index2 < 0) {
+  if (pos < 1 || pos > NUM_SPOTS || baseIndex + LEDS_PER_SPOT > _numLeds) {
     Serial.println(F("[LED] Fehler: Ungueltige Position fuer setColor."));
     return;
   }
 
-  // Beide LEDs des Stellplatzes auf die gewünschte Farbe setzen und
-  // aktualisieren
-  leds[index1] = col;
-  leds[index2] = col;
+  // Alle LEDs des Stellplatzes auf die gewünschte Farbe setzen und aktualisieren
+  for (int i = 0; i < LEDS_PER_SPOT; i++) {
+    leds[baseIndex + i] = col;
+  }
   FastLED.show();
 }
 

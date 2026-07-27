@@ -13,6 +13,8 @@ constexpr int PIN_SERVO             = 9;  // Servo Motor
 constexpr int PIN_LEDS              = 10; // WS2811 Datenleitung
 
 constexpr int NUM_SPOTS = 5;                  // Anzahl der Stellplätze/Gläser
+constexpr int LEDS_PER_SPOT = 4;              // Anzahl der LEDs pro Stellplatz (früher 2)
+constexpr int TOTAL_LEDS = NUM_SPOTS * LEDS_PER_SPOT; // Gesamtzahl der LEDs auf dem Streifen
 
 // Analog Sensor Pins (A0-A4 entsprechen den digitalen Pins 14-18)
 constexpr int PIN_SENSORS[NUM_SPOTS] = {14, 15, 16, 17, 18};
