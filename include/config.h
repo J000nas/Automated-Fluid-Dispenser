@@ -18,9 +18,6 @@ constexpr uint8_t NUM_SPOTS = 5;                      // Anzahl der Stellplätze
 constexpr uint8_t LEDS_PER_SPOT = 4;                  // Anzahl der LEDs pro Stellplatz (früher 2)
 constexpr uint8_t TOTAL_LEDS = NUM_SPOTS * LEDS_PER_SPOT; // Gesamtzahl der LEDs auf dem Streifen
 
-// Analog Sensor Pins (A0-A4 entsprechen den digitalen Pins 14-18)
-constexpr uint8_t PIN_SENSORS[NUM_SPOTS] = {14, 15, 16, 17, 18};
-
 // --- EINSTELLUNGEN ---
 constexpr uint8_t SERVO_POS[NUM_SPOTS] = {155, 127, 96, 68, 42}; // Winkel für die Gläser
 constexpr unsigned long BLINK_INTERVAL = 700;                 // Blinkgeschwindigkeit

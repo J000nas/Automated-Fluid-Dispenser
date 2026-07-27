@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AnalogLimit.h"
+#include "CupSensorManager.h"
 #include "LedControl.h"
 #include "Queue.h"
 #include "config.h"
@@ -36,10 +36,9 @@ public:
    * @param queue Die Warteschlange, in die Stellplatzpositionen
    * eingetragen/gelöscht werden.
    * @param led Referenz zur LED-Steuerung zur Anzeige des Stellplatz-Status.
-   * @param analogLimit Referenz zur Schwellenwert-Kalibrierung der analogen
-   * Sensoren.
+   * @param sensorManager Referenz zum kapazitiven CupSensorManager.
    */
-  void status(Queue &queue, LedControl &led, AnalogLimit &analogLimit);
+  void status(Queue &queue, LedControl &led, CupSensorManager &sensorManager);
 
   /**
    * @brief Fährt den Servo zur nächsten in der Warteschlange anstehenden

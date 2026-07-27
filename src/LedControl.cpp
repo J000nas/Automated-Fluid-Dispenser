@@ -57,13 +57,18 @@ void LedControl::setColor(uint8_t pos, const CRGB &col) {
 }
 
 void LedControl::blink(uint16_t interval, const CRGB &col) {
+  bool oldBlinker = _blinker;
   blinker(interval); // Internen Zustand der Blink-Variable aktualisieren
 
-  // Alle LEDs auf Basis des Blink-Zustands ein- oder ausschalten
-  for (uint8_t i = 0; i < _numLeds; i++) {
-    leds[i] = _blinker ? col : CRGB::Black;
+  // Nur ansteuern und FastLED.show() aufrufen, wenn sich der Blink-Zustand geändert hat.
+  // Das verhindert ständiges Deaktivieren von Interrupts bei jedem loop()-Durchlauf,
+  // was I2C-Verbindungen (MPR121) stören kann.
+  if (_blinker != oldBlinker) {
+    for (uint8_t i = 0; i < _numLeds; i++) {
+      leds[i] = _blinker ? col : CRGB::Black;
+    }
+    FastLED.show();
   }
-  FastLED.show();
 }
 
 void LedControl::blinker(uint16_t interval) {

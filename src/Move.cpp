@@ -1,28 +1,20 @@
 #include "Move.h"
 
 Move::Move() {
-  // Richtet alle analogen Sensor-Pins als Eingang mit Pullup-Widerständen ein
-  for (uint8_t i : PIN_SENSORS) {
-    pinMode(i, INPUT_PULLUP);
-  }
+  // Der MobaTools-Servo wird initialisiert. Zusätzliche Pins für den
+  // kapazitiven Sensor müssen nicht über pinMode konfiguriert werden,
+  // da dies über den I2C-Bus (SDA/SCL) abgewickelt wird.
 }
 
-void Move::status(Queue &queue, LedControl &led, AnalogLimit &analogLimit) {
+void Move::status(Queue &queue, LedControl &led, CupSensorManager &sensorManager) {
   // Statische Zustände speichern, um Zustandswechsel (Flanken) zu erkennen
   static bool lastSensorState[NUM_SPOTS] = {false};
   static bool sensorTriggered[NUM_SPOTS] = {false};
   static unsigned long sensorActiveSince[NUM_SPOTS] = {0};
 
   for (uint8_t i = 0; i < NUM_SPOTS; i++) {
-    bool value;
-
-    // Wenn der analoge Sensorwert kleiner oder gleich dem kalibrierten
-    // Grenzwert ist, steht ein Glas auf dem Stellplatz (Wert zieht gegen GND).
-    if (analogRead(PIN_SENSORS[i]) <= analogLimit.getValue(i)) {
-      value = true;
-    } else {
-      value = false;
-    }
+    // Wert direkt vom kapazitiven CupSensorManager abfragen
+    bool value = sensorManager.isCupDetected(i);
 
     // Steigende Flanke: Glas wurde gerade hingestellt
     if (value) {

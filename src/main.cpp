@@ -1,4 +1,4 @@
-#include "AnalogLimit.h"
+#include "CupSensorManager.h"
 #include "LedControl.h"
 #include "Move.h"
 #include "Queue.h"
@@ -16,8 +16,8 @@ Queue queue(5); ///< Warteschlange für die Stellplätze (Größe = 5 Stellplät
 LedControl
     led(TOTAL_LEDS); ///< Steuerung für die LEDs (konfiguriert via config.h)
 Move move;   ///< Ablauf- und Bewegungssteuerung (Servo-Motor & Pumpe)
-AnalogLimit
-    analogLimit; ///< Kalibrierung und Grenzwertverwaltung der analogen Sensoren
+CupSensorManager
+    sensorManager; ///< Kapazitive Glaserkennung über den MPR121
 
 void setup() {
   Serial.begin(9600); // Serielle Kommunikation starten
@@ -28,12 +28,19 @@ void setup() {
   pinMode(PIN_START_TASTER_LAMP, OUTPUT);
 
   // Hardware-Komponenten und LEDs initialisieren
-  led.ledStart();          // Start-Animation der LEDs abspielen
-  move.begin();            // Motorsteuerungs-Pins konfigurieren
-  analogLimit.calibrate(); // Bechersensoren im unbeladenen Zustand kalibrieren
+  led.ledStart(); // Start-Animation der LEDs abspielen
+  move.begin();   // Motorsteuerungs-Pins konfigurieren
+
+  // Kapazitiven Sensor initialisieren
+  if (!sensorManager.begin()) {
+    Serial.println(F("[MAIN] Fehler: Cupsensor (MPR121) konnte nicht initialisiert werden!"));
+  }
 }
 
 void loop() {
+  // Immer den Cupsensor aktualisieren (wichtig für Baseline-Drift-Tracking im Standby)
+  sensorManager.update();
+
   static bool wasRunning =
       false; // Speichert den Betriebszustand des vorherigen Schleifendurchlaufs
   bool running =
@@ -65,7 +72,7 @@ void loop() {
 
     // Sensorabfrage und Ausführung der Abfüll-Zustandsmaschine
     move.status(queue, led,
-                analogLimit); // Bechersensoren auswerten und in Queue eintragen
+                sensorManager); // Bechersensoren auswerten und in Queue eintragen
     move.run(queue, led);     // Abfüll-Ablaufsteuerung takten
     queue.printQueue();       // Warteschlange im Intervall seriell ausgeben
 
