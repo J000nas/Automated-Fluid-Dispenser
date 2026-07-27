@@ -41,13 +41,6 @@ public:
   void status(Queue &queue, LedControl &led, CupSensorManager &sensorManager);
 
   /**
-   * @brief Fährt den Servo zur nächsten in der Warteschlange anstehenden
-   * Position.
-   * @param queue Die Warteschlange der anzufahrenden Positionen.
-   */
-  void moveToNext(const Queue &queue);
-
-  /**
    * @brief Ermöglicht das manuelle Vorpumpen/Spülen über einen Taster.
    *
    * Liest den Zustand von `PIN_PUMP_TASTER` ein, entprellt diesen und schaltet
@@ -115,4 +108,5 @@ private:
 
   MoToServo
       _servo1; ///< Der MobaTools-Servo für die physische Arm-Positionierung
+  int16_t _currentTarget = -1; ///< Aktuell angefahrene Servoposition (-1 = keine)
 };

@@ -23,9 +23,9 @@ void setup() {
   Serial.begin(9600); // Serielle Kommunikation starten
 
   // Starttaster-Lampe und Taster initialisieren
-  digitalWrite(PIN_START_TASTER_LAMP, HIGH);
   pinMode(PIN_START_TASTER, INPUT_PULLUP);
   pinMode(PIN_START_TASTER_LAMP, OUTPUT);
+  digitalWrite(PIN_START_TASTER_LAMP, HIGH);
 
   // Hardware-Komponenten und LEDs initialisieren
   led.ledStart(); // Start-Animation der LEDs abspielen
@@ -33,7 +33,14 @@ void setup() {
 
   // Kapazitiven Sensor initialisieren
   if (!sensorManager.begin()) {
-    Serial.println(F("[MAIN] Fehler: Cupsensor (MPR121) konnte nicht initialisiert werden!"));
+    Serial.println(F("[MAIN] FATAL: Cupsensor (MPR121) konnte nicht initialisiert werden!"));
+    // System anhalten und Fehler mit rot blinkenden LEDs signalisieren
+    while (true) {
+      led.setAll(CRGB::Red);
+      delay(500);
+      led.clear();
+      delay(500);
+    }
   }
 }
 

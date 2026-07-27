@@ -44,16 +44,6 @@ void Move::status(Queue &queue, LedControl &led, CupSensorManager &sensorManager
   }
 }
 
-void Move::moveToNext(const Queue &queue) {
-  int16_t targetPos = queue.getNextPosition();
-  if (targetPos >= 0) {
-    // Nur anfahren, wenn sich der Servo nicht bereits bewegt
-    if (!_servo1.moving()) {
-      _servo1.write(targetPos);
-    }
-  }
-}
-
 void Move::pump() {
   static bool lastButtonState = HIGH;
   static bool pumpOn = false;
@@ -73,13 +63,13 @@ void Move::pump() {
     if (currentState == LOW && !pumpOn) {
       digitalWrite(PIN_PUMP_RELAY, HIGH); // Relais/Pumpe einschalten
       pumpOn = true;
-      Serial.println("PUMPE AN (manuell)");
+      Serial.println(F("PUMPE AN (manuell)"));
     }
     // Taster wurde losgelassen (HIGH)
     else if (currentState == HIGH && pumpOn) {
       digitalWrite(PIN_PUMP_RELAY, LOW); // Relais/Pumpe ausschalten
       pumpOn = false;
-      Serial.println("PUMPE AUS (manuell)");
+      Serial.println(F("PUMPE AUS (manuell)"));
     }
   }
 
@@ -90,7 +80,7 @@ void Move::run(Queue &queue, LedControl &led) {
   // Zustände der State-Machine zur sequentiellen Ablaufsteuerung der Abfüllung
   static enum State { IDLE, MOVING, WAITING_PUMP, WAITING_NEXT } state = IDLE;
   static unsigned long lastMoveTime = 0;
-  static int16_t lastTarget = -1; // Letzte tatsächlich angefahrene Position
+
 
   switch (state) {
   case IDLE:
@@ -98,19 +88,20 @@ void Move::run(Queue &queue, LedControl &led) {
     if (queue.queueSize() > 0) {
       int16_t nextPos = queue.getNextPosition();
       if (nextPos >= 0) {
-        _servo1.write(nextPos); // Servo fährt zur ersten Position
-        Serial.print("[RUN] Neue Position angefordert: ");
+        _currentTarget = nextPos; // Zielposition für den aktuellen Abfüllvorgang merken
+        _servo1.write(nextPos);   // Servo fährt zur ersten Position
+        Serial.print(F("[RUN] Neue Position angefordert: "));
         Serial.println(nextPos);
         state = MOVING;
       } else {
-        Serial.println("[RUN] Fehler: Ungueltige Position (-1) erkannt.");
+        Serial.println(F("[RUN] Fehler: Ungueltige Position (-1) erkannt."));
       }
     } else {
       // Wenn die Warteschlange leer ist, fährt der Servo in die Parkposition (0
       // Grad) zurück
       if (_servo1.read() != 0) {
         _servo1.write(0);
-        Serial.println("[RUN] Warteschlange leer, Motor faehrt zurueck auf 0.");
+        Serial.println(F("[RUN] Warteschlange leer, Motor faehrt zurueck auf 0."));
       }
       digitalWrite(PIN_PUMP_RELAY,
                    LOW); // Sicherstellen, dass die Pumpe aus ist
@@ -118,68 +109,79 @@ void Move::run(Queue &queue, LedControl &led) {
     break;
 
   case MOVING:
+    // Sicherheitscheck: Glas wurde während der Fahrt entfernt
+    if (queue.isEmpty() || queue.getNextPosition() != _currentTarget) {
+      Serial.println(F("[RUN] Abbruch: Glas waehrend der Fahrt entfernt."));
+      _currentTarget = -1;
+      state = IDLE;
+      break;
+    }
     // Warten, bis der Servo seine Zielposition erreicht hat (moving == 0)
     if (_servo1.moving() == 0) {
-      Serial.println("[RUN] Zielposition erreicht, Pumpe wird aktiviert.");
-
-      Serial.print("[DEBUG] Erreichte Position: ");
+      Serial.println(F("[RUN] Zielposition erreicht, Pumpe wird aktiviert."));
+      Serial.print(F("[DEBUG] Erreichte Position: "));
       Serial.println(_servo1.read());
 
-      int16_t nextPos = queue.getNextPosition();
-      if (nextPos >= 0) {
-        int8_t spotIdx = getSpotIndex((uint8_t)nextPos);
-        if (spotIdx >= 0) {
-          led.setColor(spotIdx + 1,
-                       CRGB::Yellow); // LED gelb leuchten lassen (wird befüllt)
-        } else {
-          Serial.println(F("[RUN] Warnung: Position unbekannt."));
-        }
-
-        digitalWrite(PIN_PUMP_RELAY, HIGH); // Pumpe starten
-        lastMoveTime = millis(); // Startzeit des Abfüllvorgangs speichern
-        state = WAITING_PUMP;
+      int8_t spotIdx = getSpotIndex((uint8_t)_currentTarget);
+      if (spotIdx >= 0) {
+        led.setColor(spotIdx + 1,
+                     CRGB::Yellow); // LED gelb leuchten lassen (wird befüllt)
       } else {
-        Serial.println("[RUN] Fehler: Keine gueltige naechste Position.");
-        state = IDLE;
+        Serial.println(F("[RUN] Warnung: Position unbekannt."));
       }
+
+      digitalWrite(PIN_PUMP_RELAY, HIGH); // Pumpe starten
+      lastMoveTime = millis(); // Startzeit des Abfüllvorgangs speichern
+      state = WAITING_PUMP;
     }
     break;
 
   case WAITING_PUMP:
+    // Sicherheitscheck: Glas wurde während des Pumpens entfernt
+    if (queue.isEmpty() || queue.getNextPosition() != _currentTarget) {
+      digitalWrite(PIN_PUMP_RELAY, LOW); // Pumpe sofort stoppen!
+      Serial.println(
+          F("[RUN] Abbruch: Glas waehrend des Pumpens entfernt! Pumpe gestoppt."));
+      _currentTarget = -1;
+      state = IDLE;
+      break;
+    }
     // Warten, bis die vordefinierte Pumpzeit (WAIT_TIME_PUMP) abgelaufen ist
     if (millis() - lastMoveTime >= WAIT_TIME_PUMP) {
       digitalWrite(PIN_PUMP_RELAY, LOW); // Pumpe stoppen
-      Serial.println("[RUN] Pumpzeit abgelaufen, Pumpe deaktiviert.");
+      Serial.println(F("[RUN] Pumpzeit abgelaufen, Pumpe deaktiviert."));
 
-      int16_t nextPos = queue.getNextPosition();
-      if (nextPos >= 0) {
-        int8_t spotIdx = getSpotIndex((uint8_t)nextPos);
-        if (spotIdx >= 0) {
-          led.setColor(
-              spotIdx + 1,
-              CRGB::Green); // LED grün leuchten lassen (fertig befüllt)
-        } else {
-          Serial.println(F("[RUN] Warnung: Position unbekannt."));
-        }
-        state = WAITING_NEXT;
+      int8_t spotIdx = getSpotIndex((uint8_t)_currentTarget);
+      if (spotIdx >= 0) {
+        led.setColor(
+            spotIdx + 1,
+            CRGB::Green); // LED grün leuchten lassen (fertig befüllt)
       } else {
-        Serial.println("[RUN] Fehler: Position ungueltig nach Pumpzeit.");
-        state = IDLE;
+        Serial.println(F("[RUN] Warnung: Position unbekannt."));
       }
+      state = WAITING_NEXT;
     }
     break;
 
   case WAITING_NEXT:
+    // Wenn das Glas während des Abtropfens entfernt wurde, sofort weiter
+    if (queue.isEmpty() || queue.getNextPosition() != _currentTarget) {
+      Serial.println(
+          F("[RUN] Glas entfernt waehrend Abtropfzeit, ueberspringe Wartezeit."));
+      _currentTarget = -1;
+      state = IDLE;
+      break;
+    }
     // Gesamte Wartezeit abwarten, damit Flüssigkeit abtropfen kann (WAIT_TIME
     // abzüglich der Pumpzeit)
     if (millis() - lastMoveTime >= WAIT_TIME) {
-      Serial.println("[RUN] Gesamte Wartezeit abgelaufen, naechste Position.");
-
-      Serial.print("[DEBUG] Vor Queue.popFront() – Position: ");
+      Serial.println(F("[RUN] Gesamte Wartezeit abgelaufen, naechste Position."));
+      Serial.print(F("[DEBUG] Vor Queue.popFront() – Position: "));
       Serial.println(_servo1.read());
 
       // Den soeben befüllten Becher aus der Warteschlange entfernen
       queue.popFront();
+      _currentTarget = -1;
       state = IDLE; // Bereit für den nächsten Befüllvorgang
     }
     break;
@@ -187,7 +189,9 @@ void Move::run(Queue &queue, LedControl &led) {
 }
 
 void Move::toZero() {
-  _servo1.write(0); // Parkposition (0 Grad) anfahren
+  if (_servo1.attached()) {
+    _servo1.write(0); // Parkposition (0 Grad) anfahren
+  }
 }
 
 void Move::detach() {

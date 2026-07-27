@@ -59,11 +59,11 @@ void Queue::printQueue() {
   if (currentMillis - _millisLastUpdate >= interval) {
     _millisLastUpdate = currentMillis;
 
-    Serial.println("Warteschlange: ");
+    Serial.println(F("Warteschlange: "));
     for (uint8_t i = 0; i < _queueSize; i++) {
-      Serial.print("Position ");
+      Serial.print(F("Position "));
       Serial.print(i + 1);
-      Serial.print(": ");
+      Serial.print(F(": "));
       Serial.println(_positionQueue[i]);
     }
     Serial.println();
