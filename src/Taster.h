@@ -1,16 +1,29 @@
-//
-// Created by Jonas Will on 09.05.25.
-//
+#pragma once
 
-#ifndef TASTER_H
-#define TASTER_H
-
-#include <Arduino.h>
 #include "config.h"
+#include <Arduino.h>
 
-/* --Funktion zum Erkennen vom Status vom Start Taster */
+/**
+ * @file Taster.h
+ * @brief Enthält Hilfsfunktionen zur Abfrage des Starttasters und für
+ * zeitgesteuerte Blinksignale.
+ */
+
+/**
+ * @brief Liest den Status des Start-Tasters ein und toggelt den Systemzustand.
+ *
+ * Beinhaltet eine Software-Entprellung (20 ms). Jedes vollständige Drücken und
+ * Loslassen des Tasters schaltet den Rückgabewert (System Aktiv / Inaktiv) um.
+ *
+ * @return true, wenn das System aktiv sein soll, false, wenn es gestoppt ist.
+ */
 bool TasterStart();
-/* --Funktion für das Blinken */
-bool toggleInInterval(unsigned long interval);
 
-#endif //TASTER_H
+/**
+ * @brief Erzeugt ein regelmäßiges Blinksignal (Toggle) ohne den Programmfluss
+ * zu blockieren.
+ *
+ * @param interval Blink-Intervall in Millisekunden.
+ * @return true in der einen Hälfte des Intervalls, false in der anderen Hälfte.
+ */
+bool toggleInInterval(unsigned long interval);
