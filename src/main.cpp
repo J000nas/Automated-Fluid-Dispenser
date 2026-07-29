@@ -15,9 +15,34 @@ bool help_pump = false; ///< Hilfsflagge, um beim Stoppen die Pumpe abzuschalten
 Queue queue(5); ///< Warteschlange für die Stellplätze (Größe = 5 Stellplätze)
 LedControl
     led(TOTAL_LEDS); ///< Steuerung für die LEDs (konfiguriert via config.h)
-Move move;   ///< Ablauf- und Bewegungssteuerung (Servo-Motor & Pumpe)
-CupSensorManager
-    sensorManager; ///< Kapazitive Glaserkennung über den MPR121
+Move move;           ///< Ablauf- und Bewegungssteuerung (Servo-Motor & Pumpe)
+CupSensorManager sensorManager; ///< Kapazitive Glaserkennung über den MPR121
+
+// --- Debug-Ausgabe für Glaserkennung & Queue ---
+void printDebugStatus(CupSensorManager &sensor, Queue &q) {
+  static unsigned long lastDebugPrint = 0;
+  const unsigned long DEBUG_INTERVAL = 500; // Alle 500ms ausgeben
+  unsigned long now = millis();
+  if (now - lastDebugPrint < DEBUG_INTERVAL)
+    return;
+  lastDebugPrint = now;
+  Serial.println(F("=== DEBUG: Glaserkennung ==="));
+  for (uint8_t i = 0; i < NUM_SPOTS; i++) {
+    Serial.print(F("  Platz "));
+    Serial.print(i);
+    Serial.print(F(": Raw="));
+    Serial.print(sensor.getRawDiff(i));
+    Serial.print(F("  Komp="));
+    Serial.print(sensor.getCompensatedDiff(i));
+    Serial.print(F("  Glas="));
+    Serial.println(sensor.isCupDetected(i) ? F("[XXX]") : F("[---]"));
+  }
+  Serial.print(F("=== Queue: "));
+  Serial.print(q.queueSize());
+  Serial.print(F("/"));
+  Serial.print(q.size());
+  Serial.println(F(" ==="));
+}
 
 void setup() {
   Serial.begin(9600); // Serielle Kommunikation starten
@@ -28,12 +53,13 @@ void setup() {
   digitalWrite(PIN_START_TASTER_LAMP, HIGH);
 
   // Hardware-Komponenten und LEDs initialisieren
-  led.ledStart(); // Start-Animation der LEDs abspielen
-  move.begin();   // Motorsteuerungs-Pins konfigurieren
+  // led.ledStart(); // Start-Animation der LEDs abspielen
+  move.begin(); // Motorsteuerungs-Pins konfigurieren
 
   // Kapazitiven Sensor initialisieren
   if (!sensorManager.begin()) {
-    Serial.println(F("[MAIN] FATAL: Cupsensor (MPR121) konnte nicht initialisiert werden!"));
+    Serial.println(F(
+        "[MAIN] FATAL: Cupsensor (MPR121) konnte nicht initialisiert werden!"));
     // System anhalten und Fehler mit rot blinkenden LEDs signalisieren
     while (true) {
       led.setAll(CRGB::Red);
@@ -45,8 +71,10 @@ void setup() {
 }
 
 void loop() {
-  // Immer den Cupsensor aktualisieren (wichtig für Baseline-Drift-Tracking im Standby)
+  // Immer den Cupsensor aktualisieren (wichtig für Baseline-Drift-Tracking im
+  // Standby)
   sensorManager.update();
+  printDebugStatus(sensorManager, queue); // Debug-Ausgabe für Glaserkennung
 
   static bool wasRunning =
       false; // Speichert den Betriebszustand des vorherigen Schleifendurchlaufs
@@ -78,11 +106,11 @@ void loop() {
                  LOW); // LED-Pin zieht nach GND (aktiv LOW)
 
     // Sensorabfrage und Ausführung der Abfüll-Zustandsmaschine
-    move.status(queue, led,
-                sensorManager); // Bechersensoren auswerten und in Queue eintragen
-    move.run(queue, led);     // Abfüll-Ablaufsteuerung takten
-    queue.printQueue();       // Warteschlange im Intervall seriell ausgeben
-
+    move.status(
+        queue, led,
+        sensorManager);   // Bechersensoren auswerten und in Queue eintragen
+    move.run(queue, led); // Abfüll-Ablaufsteuerung takten
+    queue.printQueue();   // Warteschlange im Intervall seriell ausgeben
     help_pump = true;
     delay(50); // Kleiner Delay zur Entlastung des Controllers
 
