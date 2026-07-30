@@ -110,6 +110,7 @@ void loop() {
         queue, led,
         sensorManager);   // Bechersensoren auswerten und in Queue eintragen
     move.run(queue, led); // Abfüll-Ablaufsteuerung takten
+    led.update();         // LED-Animationen berechnen (Fading, Wellen)
     queue.printQueue();   // Warteschlange im Intervall seriell ausgeben
     help_pump = true;
     delay(50); // Kleiner Delay zur Entlastung des Controllers

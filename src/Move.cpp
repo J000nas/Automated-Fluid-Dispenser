@@ -35,7 +35,7 @@ void Move::status(Queue &queue, LedControl &led, CupSensorManager &sensorManager
     // Fallende Flanke: Glas wurde angehoben/entfernt
     if (!value && lastSensorState[i]) {
       queue.removeFromQueue(SERVO_POS[i]); // Servoposition aus Queue entfernen
-      led.setColor(i + 1, CRGB::Black);    // LED ausschalten
+      led.clearSpot(i + 1);                // Fade-Out starten (sanftes Ausblenden)
       sensorTriggered[i] = false;
     }
 
@@ -126,6 +126,7 @@ void Move::run(Queue &queue, LedControl &led) {
       if (spotIdx >= 0) {
         led.setColor(spotIdx + 1,
                      CRGB::Yellow); // LED gelb leuchten lassen (wird befüllt)
+        led.setWave(spotIdx + 1, true); // Wellenanimation starten
       } else {
         Serial.println(F("[RUN] Warnung: Position unbekannt."));
       }
@@ -156,6 +157,7 @@ void Move::run(Queue &queue, LedControl &led) {
         led.setColor(
             spotIdx + 1,
             CRGB::Green); // LED grün leuchten lassen (fertig befüllt)
+        led.setWave(spotIdx + 1, false); // Wellenanimation stoppen
       } else {
         Serial.println(F("[RUN] Warnung: Position unbekannt."));
       }
