@@ -101,21 +101,19 @@ void CupSensorManager::update() {
     int16_t linkerNachbarAbzug = 0;
     int16_t rechterNachbarAbzug = 0;
 
-    // Linker Nachbar (Kopplung von links überall ca. 24%)
+    // Linker Nachbar (Kopplung von links ca. 5% - PLA-Verkleidung schirmt Crosstalk ab)
     if (s > 0) {
       int16_t rawL = differenzenRaw[s - 1];
       if (rawL > 0) {
-        linkerNachbarAbzug = rawL * 24 / 100;
+        linkerNachbarAbzug = rawL * 5 / 100;
       }
     }
 
-    // Rechter Nachbar (Kopplung von rechts: S1 auf S0 ist 55% wegen GND, sonst
-    // 24%)
+    // Rechter Nachbar (einheitlich 5% - kein Sonderfall mehr dank PLA-Abschirmung)
     if (s < NUM_SENSORS - 1) {
       int16_t rawR = differenzenRaw[s + 1];
       if (rawR > 0) {
-        uint8_t coeff = (s == 0) ? 55 : 24;
-        rechterNachbarAbzug = rawR * coeff / 100;
+        rechterNachbarAbzug = rawR * 5 / 100;
       }
     }
 

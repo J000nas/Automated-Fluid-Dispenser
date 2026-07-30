@@ -53,7 +53,7 @@ void setup() {
   digitalWrite(PIN_START_TASTER_LAMP, HIGH);
 
   // Hardware-Komponenten und LEDs initialisieren
-  // led.ledStart(); // Start-Animation der LEDs abspielen
+  led.ledStart(); // Start-Animation der LEDs abspielen
   move.begin(); // Motorsteuerungs-Pins konfigurieren
 
   // Kapazitiven Sensor initialisieren
@@ -84,7 +84,7 @@ void loop() {
   // =========================================================================
   // SYSTEM AKTIV: Abfüllautomatik läuft
   // =========================================================================
-  if (running) {
+  if (true) {
     // Zustandswechsel: System wurde soeben gestartet
     if (!wasRunning) {
       move.attach(PIN_SERVO); // Servo ankoppeln (PWM aktivieren)
