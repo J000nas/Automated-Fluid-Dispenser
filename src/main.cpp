@@ -45,7 +45,8 @@ void printDebugStatus(CupSensorManager &sensor, Queue &q) {
 }
 
 void setup() {
-  Serial.begin(9600); // Serielle Kommunikation starten
+  Serial.begin(115200); // Serielle Kommunikation mit hoher Baudrate starten
+                        // (verhindert Loop-Blockaden)
 
   // Starttaster-Lampe und Taster initialisieren
   pinMode(PIN_START_TASTER, INPUT_PULLUP);
@@ -54,7 +55,7 @@ void setup() {
 
   // Hardware-Komponenten und LEDs initialisieren
   led.ledStart(); // Start-Animation der LEDs abspielen
-  move.begin(); // Motorsteuerungs-Pins konfigurieren
+  move.begin();   // Motorsteuerungs-Pins konfigurieren
 
   // Kapazitiven Sensor initialisieren
   if (!sensorManager.begin()) {
@@ -84,7 +85,7 @@ void loop() {
   // =========================================================================
   // SYSTEM AKTIV: Abfüllautomatik läuft
   // =========================================================================
-  if (true) {
+  if (running) {
     // Zustandswechsel: System wurde soeben gestartet
     if (!wasRunning) {
       move.attach(PIN_SERVO); // Servo ankoppeln (PWM aktivieren)
@@ -113,7 +114,8 @@ void loop() {
     led.update();         // LED-Animationen berechnen (Fading, Wellen)
     queue.printQueue();   // Warteschlange im Intervall seriell ausgeben
     help_pump = true;
-    delay(50); // Kleiner Delay zur Entlastung des Controllers
+    delay(5); // Kleiner Delay zur Entlastung (erhöht Loop-Frequenz für flüssige
+              // LED-Animationen)
 
   }
   // =========================================================================
@@ -149,7 +151,8 @@ void loop() {
     // Im Standby-Modus manuelles Vorpumpen/Spülen via Taster erlauben
     move.pump();
 
-    // Status-Blinken aller Stellplatz-LEDs (Gelb) im Standby-Modus
-    led.blink(BLINK_INTERVAL, CRGB::Yellow);
+    // Weiches blaues Pulsieren (Atem-Effekt) aller Stellplatz-LEDs im
+    // Standby-Modus
+    led.showStandbyPulse(CRGB::Blue);
   }
 }

@@ -87,6 +87,13 @@ public:
   void blink(uint16_t interval, const CRGB &col);
 
   /**
+   * @brief Lässt alle LEDs im Standby-Modus weich in einer Farbe pulsieren.
+   * Nicht-blockierend (verwendet millis() zur Berechnung des Pulses).
+   * @param col Die Grundfarbe für den Puls (Standard: Blau).
+   */
+  void showStandbyPulse(const CRGB &col = CRGB::Blue);
+
+  /**
    * @brief Schaltet alle LEDs sofort aus (setzt sie auf Schwarz).
    * Kein Fading – sofortiges Ausschalten.
    */
@@ -108,14 +115,13 @@ private:
   void blinker(uint16_t interval);
 
   /**
-   * @brief Hilfsfunktion: Fadet eine Farbkomponente (R, G oder B) um einen
-   * Schritt Richtung Zielwert.
-   * @param current Aktuelle Farbkomponente (wird verändert).
-   * @param target Ziel-Farbkomponente.
-   * @param step Schrittweite pro Aufruf.
-   * @return true wenn sich der Wert geändert hat.
+   * @brief Hilfsfunktion: Fadet einen float-Wert Richtung Zielwert.
+   * @param current Aktueller Wert.
+   * @param target Zielwert.
+   * @param step Schrittweite.
+   * @return Der neue berechnete Wert.
    */
-  bool blendComponent(uint8_t &current, uint8_t target, float step);
+  float blendValue(float current, float target, float step);
 
   CRGB *leds;    ///< Dynamisches Array für den Zustand der einzelnen LEDs
   uint8_t _numLeds;  ///< Gesamtzahl der LEDs auf dem Streifen
@@ -125,9 +131,12 @@ private:
   // --- Animationszustand pro Stellplatz ---
   float _helligkeit[NUM_SPOTS];      ///< Aktuelle Helligkeit (0.0 – 255.0), wird geglättet
   float _zielHelligkeit[NUM_SPOTS];  ///< Ziel-Helligkeit (255 = an, 0 = aus)
-  CRGB _aktuelleFarbe[NUM_SPOTS];    ///< Aktuelle angezeigte Farbe (wird Richtung Ziel geblendet)
+  float _aktuelleFarbeR[NUM_SPOTS];  ///< Aktueller Rot-Wert (0.0 - 255.0) für stufenlose Übergänge
+  float _aktuelleFarbeG[NUM_SPOTS];  ///< Aktueller Grün-Wert (0.0 - 255.0) für stufenlose Übergänge
+  float _aktuelleFarbeB[NUM_SPOTS];  ///< Aktueller Blau-Wert (0.0 - 255.0) für stufenlose Übergänge
   CRGB _zielFarbe[NUM_SPOTS];        ///< Zielfarbe, die setColor() setzt
   bool _wellenAktiv[NUM_SPOTS];      ///< Wellenanimation aktiv (nur bei Befüllung/Gelb)
 
-  unsigned long _lastUpdate;  ///< Zeitstempel des letzten update()-Aufrufs für zeitbasiertes Fading
+   unsigned long _lastUpdate;  ///< Zeitstempel des letzten update()-Aufrufs für zeitbasiertes Fading
+  unsigned long _standbyStart; ///< Startzeitpunkt des aktuellen Standby-Intervalls
 };
