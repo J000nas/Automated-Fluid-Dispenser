@@ -27,10 +27,13 @@ constexpr uint8_t TOTAL_LEDS =
     NUM_SPOTS * LEDS_PER_SPOT; // Gesamtzahl der LEDs auf dem Streifen
 
 // --- EINSTELLUNGEN ---
-constexpr uint8_t SERVO_POS[NUM_SPOTS] = {155, 127, 96, 68,
-                                          42}; // Winkel für die Gläser
+constexpr uint8_t SERVO_PARK_POS = 170; // Ruheposition des Servos (ca. 6 Uhr)
+constexpr uint8_t SERVO_POS[NUM_SPOTS] = {10, 40, 75, 105,
+                                          140}; // Winkel für die Gläser 1 bis 5
 constexpr unsigned long BLINK_INTERVAL =
-    1280; // Blinkgeschwindigkeit synchron zum LED-Pulsieren (1280 ms Halbwelle / 2560 ms Periode)
+    1280; // Blinkgeschwindigkeit synchron zum LED-Pulsieren (1280 ms Halbwelle
+          // / 2560 ms Periode)
 constexpr unsigned long WAIT_TIME = 11000; // Gesamte Wartezeit pro Glas (ms)
 constexpr unsigned long WAIT_TIME_PUMP = 10000; // Pumpzeit pro Glas (ms)
-constexpr uint16_t SERVO_SPEED_TIME = 900; // Fahrzeit des Servos für 180 Grad in ms
+constexpr uint16_t SERVO_SPEED_TIME =
+    900; // Fahrzeit des Servos für 180 Grad in ms

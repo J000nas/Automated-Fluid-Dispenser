@@ -109,7 +109,7 @@ private:
   MoToServo
       _servo1; ///< Der MobaTools-Servo für die physische Arm-Positionierung
   int16_t _currentTarget = -1; ///< Aktuell angefahrene Servoposition (-1 = keine)
-  int16_t _currentArmAngle = 0; ///< Verlässliche interne Arm-Position (0 = Parkposition)
+  int16_t _currentArmAngle = SERVO_PARK_POS; ///< Verlässliche interne Arm-Position (SERVO_PARK_POS = Parkposition)
   uint16_t _expectedMoveDuration = 0; ///< Errechnete Mindest-Fahrzeit in ms für die aktuelle Strecke
   bool _isParking = false; ///< Flagge für aktive Park-Rückfahrt
   unsigned long _parkStartTime = 0; ///< Startzeit der Parkfahrt

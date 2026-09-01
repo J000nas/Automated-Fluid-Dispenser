@@ -109,16 +109,18 @@ void Move::run(Queue &queue, LedControl &led) {
         Serial.println(F("[RUN] Fehler: Ungueltige Position (-1) erkannt."));
       }
     } else {
-      // Wenn die Warteschlange leer ist und der Arm noch nicht auf 0 steht:
-      if (_currentArmAngle != 0) {
-        uint16_t diff = abs(_currentArmAngle);
+      // Wenn die Warteschlange leer ist und der Arm noch nicht in Parkposition steht:
+      if (_currentArmAngle != SERVO_PARK_POS) {
+        uint16_t diff = abs(_currentArmAngle - SERVO_PARK_POS);
         _expectedMoveDuration = (uint16_t)(((unsigned long)diff * SERVO_SPEED_TIME) / 180) + 50;
-        _currentArmAngle = 0;
+        _currentArmAngle = SERVO_PARK_POS;
         attach(PIN_SERVO);
-        _servo1.write(0);
+        _servo1.write(SERVO_PARK_POS);
         stateStartTime = millis();
         state = MOVING_TO_ZERO;
-        Serial.print(F("[RUN] Warteschlange leer, fahre zurueck auf 0 Grad (Dauer: "));
+        Serial.print(F("[RUN] Warteschlange leer, fahre zurueck auf Parkposition "));
+        Serial.print(SERVO_PARK_POS);
+        Serial.print(F(" Grad (Dauer: "));
         Serial.print(_expectedMoveDuration);
         Serial.println(F(" ms)..."));
       }
@@ -215,10 +217,10 @@ void Move::run(Queue &queue, LedControl &led) {
     break;
 
   case MOVING_TO_ZERO:
-    // Warten, bis 0 Grad erreicht ist
+    // Warten, bis Parkposition erreicht ist
     if (millis() - stateStartTime >= _expectedMoveDuration) {
       detach(); // Stromlos schalten & Pin auf LOW halten
-      Serial.println(F("[MOVE] Servo in Parkposition 0 Grad angekommen und abgekoppelt."));
+      Serial.println(F("[MOVE] Servo in Parkposition angekommen und abgekoppelt."));
       state = IDLE;
     }
     break;
@@ -226,12 +228,12 @@ void Move::run(Queue &queue, LedControl &led) {
 }
 
 void Move::toZero() {
-  if (_currentArmAngle != 0) {
-    uint16_t diff = abs(_currentArmAngle);
+  if (_currentArmAngle != SERVO_PARK_POS) {
+    uint16_t diff = abs(_currentArmAngle - SERVO_PARK_POS);
     _expectedMoveDuration = (uint16_t)(((unsigned long)diff * SERVO_SPEED_TIME) / 180) + 50;
-    _currentArmAngle = 0;
+    _currentArmAngle = SERVO_PARK_POS;
     attach(PIN_SERVO);
-    _servo1.write(0); // Parkposition (0 Grad) anfahren
+    _servo1.write(SERVO_PARK_POS); // Parkposition (z. B. 170 Grad) anfahren
     _isParking = true;
     _parkStartTime = millis();
   }
@@ -249,7 +251,7 @@ void Move::detachIfIdle() {
       if (millis() - _parkStartTime >= _expectedMoveDuration) {
         _isParking = false;
         detach();
-        Serial.println(F("[MOVE] Servo in Nullposition angekommen und abgekoppelt."));
+        Serial.println(F("[MOVE] Servo in Parkposition angekommen und abgekoppelt."));
       }
     } else {
       detach();
@@ -271,6 +273,8 @@ void Move::begin() {
   digitalWrite(PIN_PUMP_RELAY, LOW); // Sicherstellen, dass das Relais zu Beginn aus ist
   digitalWrite(PIN_PUMP_TASTER_LAMP, LOW);
   digitalWrite(PIN_LEDS_TOWER, LOW);
+
+  _currentArmAngle = SERVO_PARK_POS;
 
   // Servo initial sicher abkoppeln und Signalleitung auf 0V legen
   detach();
