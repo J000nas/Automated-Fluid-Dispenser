@@ -1,7 +1,8 @@
 #include "LedControl.h"
 
 LedControl::LedControl(uint8_t num)
-    : _numLeds(num), _blinker(false), _blinkerMillis(0), _lastUpdate(0), _standbyStart(0) {
+    : _numLeds(num), _blinker(false), _blinkerMillis(0), _lastUpdate(0),
+      _standbyStart(0) {
   leds = new CRGB[_numLeds]; // Dynamischen Speicher für die LEDs reservieren
 
   // Animationszustand für alle Stellplätze auf "aus" initialisieren
@@ -36,7 +37,8 @@ void LedControl::update() {
   unsigned long elapsed = now - _lastUpdate;
 
   // Mindestens 10ms zwischen Updates warten (max. ~100 Hz)
-  if (elapsed < 10) return;
+  if (elapsed < 10)
+    return;
   _lastUpdate = now;
 
   // Fade-Schritte zeitbasiert berechnen:
@@ -82,25 +84,33 @@ void LedControl::update() {
     float oldG = _aktuelleFarbeG[spot];
     float oldB = _aktuelleFarbeB[spot];
 
-    _aktuelleFarbeR[spot] = blendValue(_aktuelleFarbeR[spot], _zielFarbe[spot].r, colorStep);
-    _aktuelleFarbeG[spot] = blendValue(_aktuelleFarbeG[spot], _zielFarbe[spot].g, colorStep);
-    _aktuelleFarbeB[spot] = blendValue(_aktuelleFarbeB[spot], _zielFarbe[spot].b, colorStep);
+    _aktuelleFarbeR[spot] =
+        blendValue(_aktuelleFarbeR[spot], _zielFarbe[spot].r, colorStep);
+    _aktuelleFarbeG[spot] =
+        blendValue(_aktuelleFarbeG[spot], _zielFarbe[spot].g, colorStep);
+    _aktuelleFarbeB[spot] =
+        blendValue(_aktuelleFarbeB[spot], _zielFarbe[spot].b, colorStep);
 
-    if (_aktuelleFarbeR[spot] != oldR || _aktuelleFarbeG[spot] != oldG || _aktuelleFarbeB[spot] != oldB) {
+    if (_aktuelleFarbeR[spot] != oldR || _aktuelleFarbeG[spot] != oldG ||
+        _aktuelleFarbeB[spot] != oldB) {
       changed = true;
     }
 
     // --- D) LEDs berechnen: Farbe × Welle × Helligkeit ---
     for (uint8_t i = 0; i < LEDS_PER_SPOT && baseIdx + i < _numLeds; i++) {
-      CRGB pixelColor = CRGB((uint8_t)_aktuelleFarbeR[spot], (uint8_t)_aktuelleFarbeG[spot], (uint8_t)_aktuelleFarbeB[spot]);
+      CRGB pixelColor =
+          CRGB((uint8_t)_aktuelleFarbeR[spot], (uint8_t)_aktuelleFarbeG[spot],
+               (uint8_t)_aktuelleFarbeB[spot]);
 
       // Welleneffekt: Sinuswelle rotiert über die LEDs des Stellplatzes
       if (_wellenAktiv[spot]) {
         // Jede LED bekommt einen versetzten Phasen-Offset
         uint8_t offset = i * (255 / LEDS_PER_SPOT);
-        // Sinuswelle rotieren lassen (now/3 für eine harmonischere, flüssige Bewegung)
+        // Sinuswelle rotieren lassen (now/3 für eine harmonischere, flüssige
+        // Bewegung)
         uint8_t sinValue = sin8((uint8_t)(now / 3) + offset);
-        // Welle moduliert deutlicher zwischen 20% und 100% Helligkeit (höherer Kontrast für bessere Sichtbarkeit)
+        // Welle moduliert deutlicher zwischen 20% und 100% Helligkeit (höherer
+        // Kontrast für bessere Sichtbarkeit)
         uint8_t waveVal = map(sinValue, 0, 255, 50, 255);
         pixelColor.nscale8(waveVal);
         changed = true; // Welle ist immer in Bewegung
@@ -122,14 +132,17 @@ void LedControl::update() {
 // blendValue() – Hilfsfunktion für float-Fading
 // ============================================================================
 float LedControl::blendValue(float current, float target, float step) {
-  if (current == target) return current;
+  if (current == target)
+    return current;
 
   if (current < target) {
     current += step;
-    if (current > target) current = target;
+    if (current > target)
+      current = target;
   } else {
     current -= step;
-    if (current < target) current = target;
+    if (current < target)
+      current = target;
   }
   return current;
 }
@@ -148,21 +161,24 @@ void LedControl::setColor(uint8_t pos, const CRGB &col) {
   _zielFarbe[spot] = col;
   _zielHelligkeit[spot] = 255;
 
-  // Wenn der Spot komplett dunkel ist, Farbe direkt setzen (ohne Farbmischungs-Übergang von Schwarz)
+  // Wenn der Spot komplett dunkel ist, Farbe direkt setzen (ohne
+  // Farbmischungs-Übergang von Schwarz)
   if (_helligkeit[spot] <= 0) {
     _aktuelleFarbeR[spot] = col.r;
     _aktuelleFarbeG[spot] = col.g;
     _aktuelleFarbeB[spot] = col.b;
   }
 
-  _standbyStart = 0; // Standby-Zeit zurücksetzen, da wir wieder im aktiven Modus sind
+  _standbyStart =
+      0; // Standby-Zeit zurücksetzen, da wir wieder im aktiven Modus sind
 }
 
 // ============================================================================
 // clearSpot() – Startet den Fade-Out für einen Stellplatz
 // ============================================================================
 void LedControl::clearSpot(uint8_t pos) {
-  if (pos < 1 || pos > NUM_SPOTS) return;
+  if (pos < 1 || pos > NUM_SPOTS)
+    return;
   uint8_t spot = pos - 1;
   _zielHelligkeit[spot] = 0;
   _wellenAktiv[spot] = false;
@@ -172,7 +188,8 @@ void LedControl::clearSpot(uint8_t pos) {
 // setWave() – Aktiviert/deaktiviert die Wellenanimation für einen Stellplatz
 // ============================================================================
 void LedControl::setWave(uint8_t pos, bool active) {
-  if (pos < 1 || pos > NUM_SPOTS) return;
+  if (pos < 1 || pos > NUM_SPOTS)
+    return;
   _wellenAktiv[pos - 1] = active;
 }
 
@@ -185,21 +202,21 @@ void LedControl::ledStart(const CRGB &col) {
   // 1. Aktivierungs-Spin für jeden Ring nacheinander
   for (uint8_t spot = 0; spot < NUM_SPOTS; spot++) {
     uint8_t baseIdx = spot * LEDS_PER_SPOT;
-    
+
     for (int round = 0; round < 2; round++) {
       for (int i = 0; i < LEDS_PER_SPOT; i++) {
         for (int k = 0; k < LEDS_PER_SPOT; k++) {
           leds[baseIdx + k].fadeToBlackBy(80);
         }
-        
+
         uint8_t hue = 160 - (spot * 12) - (i * 10);
         leds[baseIdx + i] = CHSV(hue, 255, 255);
-        
+
         FastLED.show();
         delay(35);
       }
     }
-    
+
     for (int k = 0; k < LEDS_PER_SPOT; k++) {
       leds[baseIdx + k] = col;
       leds[baseIdx + k].nscale8(40);
@@ -222,7 +239,7 @@ void LedControl::ledStart(const CRGB &col) {
     FastLED.show();
     delay(10);
   }
-  
+
   delay(400);
 
   for (int b = 255; b >= 30; b -= 6) {
@@ -238,8 +255,9 @@ void LedControl::ledStart(const CRGB &col) {
     delay(10);
   }
 
-  // WICHTIG: Kein clear() aufrufen! Die LEDs bleiben bei Helligkeit 30 (Dunkelblau) stehen.
-  // _standbyStart wird auf 0 gesetzt, damit showStandbyPulse() nahtlos bei Helligkeit 30 übernimmt.
+  // WICHTIG: Kein clear() aufrufen! Die LEDs bleiben bei Helligkeit 30
+  // (Dunkelblau) stehen. _standbyStart wird auf 0 gesetzt, damit
+  // showStandbyPulse() nahtlos bei Helligkeit 30 übernimmt.
   _standbyStart = 0;
 }
 
@@ -283,18 +301,36 @@ void LedControl::showStandbyPulse(const CRGB &col) {
   // Weicher sinusförmiger Atem-Effekt
   // +192 sorgt dafür, dass der Sinus genau bei seinem Minimum (0) startet.
   // Dadurch ist der Übergang von ledStart() (das bei Helligkeit 30 endet)
-  // zu showStandbyPulse() (das bei Helligkeit 30 startet) absolut nahtlos und stufenlos!
+  // zu showStandbyPulse() (das bei Helligkeit 30 startet) absolut nahtlos und
+  // stufenlos!
   uint8_t pulse = ease8InOutApprox(sin8((t / 10) + 192));
-  
+
   // Helligkeit moduliert zwischen 30 (ca. 12%) und 140 (ca. 55%)
   uint8_t brightness = map(pulse, 0, 255, 30, 140);
-  
-  for (uint8_t i = 0; i < _numLeds; i++) {
-    CRGB tempColor = col;
-    tempColor.nscale8(brightness);
-    leds[i] = tempColor;
+
+  // Nur FastLED.show() aufrufen, wenn sich der Helligkeitswert geändert hat
+  // (verhindert ständige Interrupt-Blockaden und eliminiert Taster-Flackern)
+  static uint8_t lastStandbyBrightness = 255;
+  if (brightness != lastStandbyBrightness) {
+    lastStandbyBrightness = brightness;
+    for (uint8_t i = 0; i < _numLeds; i++) {
+      CRGB tempColor = col;
+      tempColor.nscale8(brightness);
+      leds[i] = tempColor;
+    }
+    FastLED.show();
   }
-  FastLED.show();
+}
+
+// ============================================================================
+// getStandbyPulse() – Liefert den aktuellen Puls-Wert (0 - 255)
+// ============================================================================
+uint8_t LedControl::getStandbyPulse() const {
+  if (_standbyStart == 0) {
+    return 0;
+  }
+  unsigned long t = millis() - _standbyStart;
+  return ease8InOutApprox(sin8((t / 10) + 192));
 }
 
 // ============================================================================

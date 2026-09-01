@@ -66,7 +66,7 @@ public:
 
 private:
   Adafruit_MPR121 cap;
-  const uint8_t SENSOR_PINS[NUM_SENSORS] = {0, 1, 2, 3, 4};
+  const uint8_t SENSOR_PINS[NUM_SENSORS] = {4, 3, 2, 1, 0};
 
   // Hysterese-Schwellenwerte
   const uint8_t TOUCH_THRESHOLD = 8;

@@ -7,20 +7,22 @@
 // Höhere Zahl = Schneller, Kleinere Zahl = Langsamer
 // Diese Werte sind für eine Basis-Updaterate von 5ms kalibriert.
 // Die update()-Methode rechnet die Geschwindigkeit automatisch zeitbasiert um,
-// sodass das Fading unabhängig von der Loop-Geschwindigkeit gleich schnell läuft.
-#define FADE_IN_SPEED   5.5f   // Ziemlich zügig an
-#define FADE_OUT_SPEED  5.0f   // Sehr sanft aus (Soft-Off)
-#define COLOR_BLEND_SPEED 5.0f // Geschwindigkeit für Farbübergänge (Rot→Gelb etc.)
+// sodass das Fading unabhängig von der Loop-Geschwindigkeit gleich schnell
+// läuft.
+#define FADE_IN_SPEED 5.5f  // Ziemlich zügig an
+#define FADE_OUT_SPEED 5.0f // Sehr sanft aus (Soft-Off)
+#define COLOR_BLEND_SPEED                                                      \
+  5.0f // Geschwindigkeit für Farbübergänge (Rot→Gelb etc.)
 
 /**
  * @class LedControl
  * @brief Steuert die WS2811 LED-Streifen zur optischen Visualisierung des
  * Systemstatus.
  *
- * Verwaltet die LEDs für die Stellplätze (jeweils LEDS_PER_SPOT LEDs pro Stellplatz).
- * Unterstützt sanftes Fade-In/Out, weiche Farbübergänge und eine rotierende
- * Wellenanimation während der Befüllung.
- * 
+ * Verwaltet die LEDs für die Stellplätze (jeweils LEDS_PER_SPOT LEDs pro
+ * Stellplatz). Unterstützt sanftes Fade-In/Out, weiche Farbübergänge und eine
+ * rotierende Wellenanimation während der Befüllung.
+ *
  * WICHTIG: update() muss in jedem loop()-Durchlauf aufgerufen werden,
  * damit die Animationen berechnet und die LEDs aktualisiert werden.
  */
@@ -58,7 +60,8 @@ public:
    * @brief Setzt die Zielfarbe für einen Stellplatz und startet den Fade-In.
    * Wenn bereits eine andere Farbe angezeigt wird, wird sanft übergeblendet.
    * @param pos Der Stellplatz (1-basiert, 1 bis NUM_SPOTS).
-   * @param col Die Zielfarbe (z. B. Rot = erkannt, Gelb = wird befüllt, Grün = fertig).
+   * @param col Die Zielfarbe (z. B. Rot = erkannt, Gelb = wird befüllt, Grün =
+   * fertig).
    */
   void setColor(uint8_t pos, const CRGB &col);
 
@@ -72,7 +75,8 @@ public:
   /**
    * @brief Aktiviert oder deaktiviert die Wellenanimation für einen Stellplatz.
    * Bei aktiver Welle rotiert eine Sinuswelle über die LEDs des Stellplatzes.
-   * Wird typischerweise bei Gelb (Befüllung) aktiviert und bei Grün (fertig) deaktiviert.
+   * Wird typischerweise bei Gelb (Befüllung) aktiviert und bei Grün (fertig)
+   * deaktiviert.
    * @param pos Der Stellplatz (1-basiert, 1 bis NUM_SPOTS).
    * @param active true = Welle aktivieren, false = Welle deaktivieren.
    */
@@ -92,6 +96,13 @@ public:
    * @param col Die Grundfarbe für den Puls (Standard: Blau).
    */
   void showStandbyPulse(const CRGB &col = CRGB::Blue);
+
+  /**
+   * @brief Gibt den aktuellen Puls-Wert (0 bis 255) des Standby-Pulsierens zurück.
+   * Ermöglicht die synchrone Ansteuerung des Start-Tasters.
+   * @return Aktueller Puls-Wert (0 bis 255).
+   */
+  uint8_t getStandbyPulse() const;
 
   /**
    * @brief Schaltet alle LEDs sofort aus (setzt sie auf Schwarz).
@@ -123,20 +134,27 @@ private:
    */
   float blendValue(float current, float target, float step);
 
-  CRGB *leds;    ///< Dynamisches Array für den Zustand der einzelnen LEDs
-  uint8_t _numLeds;  ///< Gesamtzahl der LEDs auf dem Streifen
-  bool _blinker; ///< Aktueller Blink-Zustand (an/aus)
+  CRGB *leds;       ///< Dynamisches Array für den Zustand der einzelnen LEDs
+  uint8_t _numLeds; ///< Gesamtzahl der LEDs auf dem Streifen
+  bool _blinker;    ///< Aktueller Blink-Zustand (an/aus)
   unsigned long _blinkerMillis; ///< Zeitstempel des letzten Zustandswechsels
 
   // --- Animationszustand pro Stellplatz ---
-  float _helligkeit[NUM_SPOTS];      ///< Aktuelle Helligkeit (0.0 – 255.0), wird geglättet
-  float _zielHelligkeit[NUM_SPOTS];  ///< Ziel-Helligkeit (255 = an, 0 = aus)
-  float _aktuelleFarbeR[NUM_SPOTS];  ///< Aktueller Rot-Wert (0.0 - 255.0) für stufenlose Übergänge
-  float _aktuelleFarbeG[NUM_SPOTS];  ///< Aktueller Grün-Wert (0.0 - 255.0) für stufenlose Übergänge
-  float _aktuelleFarbeB[NUM_SPOTS];  ///< Aktueller Blau-Wert (0.0 - 255.0) für stufenlose Übergänge
-  CRGB _zielFarbe[NUM_SPOTS];        ///< Zielfarbe, die setColor() setzt
-  bool _wellenAktiv[NUM_SPOTS];      ///< Wellenanimation aktiv (nur bei Befüllung/Gelb)
+  float _helligkeit[NUM_SPOTS];     ///< Aktuelle Helligkeit (0.0 – 255.0), wird
+                                    ///< geglättet
+  float _zielHelligkeit[NUM_SPOTS]; ///< Ziel-Helligkeit (255 = an, 0 = aus)
+  float _aktuelleFarbeR[NUM_SPOTS]; ///< Aktueller Rot-Wert (0.0 - 255.0) für
+                                    ///< stufenlose Übergänge
+  float _aktuelleFarbeG[NUM_SPOTS]; ///< Aktueller Grün-Wert (0.0 - 255.0) für
+                                    ///< stufenlose Übergänge
+  float _aktuelleFarbeB[NUM_SPOTS]; ///< Aktueller Blau-Wert (0.0 - 255.0) für
+                                    ///< stufenlose Übergänge
+  CRGB _zielFarbe[NUM_SPOTS];       ///< Zielfarbe, die setColor() setzt
+  bool _wellenAktiv[NUM_SPOTS];     ///< Wellenanimation aktiv (nur bei
+                                    ///< Befüllung/Gelb)
 
-   unsigned long _lastUpdate;  ///< Zeitstempel des letzten update()-Aufrufs für zeitbasiertes Fading
-  unsigned long _standbyStart; ///< Startzeitpunkt des aktuellen Standby-Intervalls
+  unsigned long _lastUpdate; ///< Zeitstempel des letzten update()-Aufrufs für
+                             ///< zeitbasiertes Fading
+  unsigned long
+      _standbyStart; ///< Startzeitpunkt des aktuellen Standby-Intervalls
 };
