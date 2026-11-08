@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Arduino.h>
 #include <stdint.h>
 
 // ==========================================
@@ -16,7 +17,11 @@ constexpr uint8_t PIN_PUMP_TASTER_LAMP = 7;  // Lampe im Pumpen Taster
 constexpr uint8_t PIN_LEDS_TOWER = 9;        // Lampen Turm
 constexpr uint8_t PIN_LEDS_RKL = 10;         // Rot-Kugel-Licht
 constexpr uint8_t PIN_LEDS_FRONT_BACK = 11;  // Lampen vorne, hinten
-constexpr uint8_t PIN_PUMP_RELAY = 12;       // Relais für die Pumpe
+constexpr uint8_t PIN_PUMP_ENABLE =
+    12; // TMC2209 Treiber Enable (Active-LOW, ehemals Relais)
+constexpr uint8_t PIN_PUMP_STEP = A7; // TMC2209 Step (A6 / D20 auf Nano Every)
+constexpr uint8_t PIN_PUMP_DIR = A6;  // TMC2209 Dir (A7 / D21 auf Nano Every)
+constexpr bool PUMP_INVERT_DIR = true; // Pumprichtung umkehren (true = umgekehrte Drehrichtung)
 constexpr uint8_t PIN_LAMP_TASTER = 14;      // Lampen Taster
 constexpr uint8_t PIN_LAMP_TASTER_LAMP = 15; // Lampe im Lampen Taster
 
@@ -27,9 +32,9 @@ constexpr uint8_t TOTAL_LEDS =
     NUM_SPOTS * LEDS_PER_SPOT; // Gesamtzahl der LEDs auf dem Streifen
 
 // --- EINSTELLUNGEN ---
-constexpr uint8_t SERVO_PARK_POS = 170; // Ruheposition des Servos (ca. 6 Uhr)
-constexpr uint8_t SERVO_POS[NUM_SPOTS] = {10, 40, 75, 105,
-                                          140}; // Winkel für die Gläser 1 bis 5
+constexpr uint8_t SERVO_PARK_POS = 130; // Ruheposition des Servos (ca. 6 Uhr)
+constexpr uint8_t SERVO_POS[NUM_SPOTS] = {0, 5, 40, 75,
+                                          100}; // Winkel für die Gläser 1 bis 5
 constexpr unsigned long BLINK_INTERVAL =
     1280; // Blinkgeschwindigkeit synchron zum LED-Pulsieren (1280 ms Halbwelle
           // / 2560 ms Periode)

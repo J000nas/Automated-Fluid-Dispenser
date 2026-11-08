@@ -1,9 +1,9 @@
 #include "Move.h"
 
-Move::Move() {
-  // Der MobaTools-Servo wird initialisiert. Zusätzliche Pins für den
-  // kapazitiven Sensor müssen nicht über pinMode konfiguriert werden,
-  // da dies über den I2C-Bus (SDA/SCL) abgewickelt wird.
+Move::Move() : _pump(PIN_PUMP_STEP, PIN_PUMP_DIR, PIN_PUMP_ENABLE) {
+  // Der MobaTools-Servo und die StepperPump werden initialisiert.
+  // Zusätzliche Pins für den kapazitiven Sensor müssen nicht über pinMode
+  // konfiguriert werden, da dies über den I2C-Bus (SDA/SCL) abgewickelt wird.
 }
 
 void Move::status(Queue &queue, LedControl &led,
@@ -62,7 +62,7 @@ void Move::pump() {
   if ((millis() - lastDebounceTime) > debounceDelay) {
     // Taster wurde frisch gedrückt (LOW)
     if (currentState == LOW && !pumpOn) {
-      digitalWrite(PIN_PUMP_RELAY, HIGH);       // Relais/Pumpe einschalten
+      _pump.startContinuous();                  // Stepper-Pumpe vorwärts starten
       digitalWrite(PIN_PUMP_TASTER_LAMP, HIGH);  // Lampe im Pumpentaster einschalten
       digitalWrite(PIN_LEDS_TOWER, HIGH);        // LED Tower einschalten
       pumpOn = true;
@@ -70,20 +70,27 @@ void Move::pump() {
     }
     // Taster wurde losgelassen (HIGH)
     else if (currentState == HIGH && pumpOn) {
-      digitalWrite(PIN_PUMP_RELAY, LOW);        // Relais/Pumpe ausschalten
+      _pump.stopWithRetract();                  // Bremsen & Anti-Drip Rückzug ausführen
       digitalWrite(PIN_PUMP_TASTER_LAMP, LOW);   // Lampe im Pumpentaster ausschalten
-      digitalWrite(PIN_LEDS_TOWER, LOW);         // LED Tower ausschalten
       pumpOn = false;
-      Serial.println(F("PUMPE AUS (manuell)"));
+      Serial.println(F("PUMPE AUS (manuell mit Anti-Drip Rueckzug)"));
     }
   }
 
+  // Turm-LED ausschalten, sobald der gesamte Pump- und Rückzugsvorgang abgeschlossen ist
+  if (!pumpOn && !_pump.isRunning()) {
+    digitalWrite(PIN_LEDS_TOWER, LOW);
+  }
+
   lastButtonState = currentState;
+  _pump.update(); // Schrittmotor während des manuellen Pumpens takten
 }
 
 void Move::run(Queue &queue, LedControl &led) {
+  _pump.update(); // Schrittmotor während des Ablaufs takten
+
   // Zustände der State-Machine zur sequentiellen Ablaufsteuerung der Abfüllung
-  static enum State { IDLE, MOVING, WAITING_PUMP, WAITING_NEXT, MOVING_TO_ZERO } state = IDLE;
+  static enum State { IDLE, MOVING, WAITING_PUMP, ABORTING_PUMP, WAITING_NEXT, MOVING_TO_ZERO } state = IDLE;
   static unsigned long stateStartTime = 0;
 
   switch (state) {
@@ -124,7 +131,7 @@ void Move::run(Queue &queue, LedControl &led) {
         Serial.print(_expectedMoveDuration);
         Serial.println(F(" ms)..."));
       }
-      digitalWrite(PIN_PUMP_RELAY, LOW); // Sicherstellen, dass die Pumpe aus ist
+      _pump.stop(); // Sicherstellen, dass die Pumpe aus ist
       digitalWrite(PIN_PUMP_TASTER_LAMP, LOW);
       digitalWrite(PIN_LEDS_TOWER, LOW);
     }
@@ -156,7 +163,7 @@ void Move::run(Queue &queue, LedControl &led) {
         Serial.println(F("[RUN] Warnung: Position unbekannt."));
       }
 
-      digitalWrite(PIN_PUMP_RELAY, HIGH); // Pumpe starten
+      _pump.start(WAIT_TIME_PUMP);        // Stepper-Pumpe starten (Rampe, konstanter Lauf & Anti-Drip Rückzug)
       digitalWrite(PIN_LEDS_TOWER, HIGH);  // LED Tower während des Befüllens einschalten
       stateStartTime = millis(); // Startzeit des Abfüllvorgangs speichern
       state = WAITING_PUMP;
@@ -166,17 +173,20 @@ void Move::run(Queue &queue, LedControl &led) {
   case WAITING_PUMP:
     // Sicherheitscheck: Glas wurde während des Pumpens entfernt
     if (queue.isEmpty() || queue.getNextPosition() != _currentTarget) {
-      digitalWrite(PIN_PUMP_RELAY, LOW); // Pumpe sofort stoppen!
+      int8_t spotIdx = getSpotIndex((uint8_t)_currentTarget);
+      if (spotIdx >= 0) {
+        led.setWave(spotIdx + 1, false); // Wellenanimation sofort stoppen
+      }
+      _pump.stopWithRetract();            // Vorwärtslauf sofort stoppen & Anti-Drip Rückzug starten
       digitalWrite(PIN_LEDS_TOWER, LOW);  // LED Tower ausschalten
       Serial.println(F("[RUN] Abbruch: Glas waehrend des Pumpens entfernt! "
-                       "Pumpe gestoppt."));
-      _currentTarget = -1;
-      state = IDLE;
+                       "Pumpe gestoppt (Anti-Drip Rueckzug)..."));
+      state = ABORTING_PUMP;
       break;
     }
-    // Warten, bis die vordefinierte Pumpzeit (WAIT_TIME_PUMP) abgelaufen ist
-    if (millis() - stateStartTime >= WAIT_TIME_PUMP) {
-      digitalWrite(PIN_PUMP_RELAY, LOW); // Pumpe stoppen
+    // Warten, bis der Pumpvorgang (inkl. Anti-Drip Rueckzug) vollstaendig beendet ist
+    if (_pump.isFinished() || (millis() - stateStartTime >= WAIT_TIME_PUMP + 200)) {
+      _pump.stop();                       // Pumpe stoppen
       digitalWrite(PIN_LEDS_TOWER, LOW);  // LED Tower ausschalten
       Serial.println(F("[RUN] Pumpzeit abgelaufen, Pumpe deaktiviert."));
 
@@ -189,6 +199,15 @@ void Move::run(Queue &queue, LedControl &led) {
         Serial.println(F("[RUN] Warnung: Position unbekannt."));
       }
       state = WAITING_NEXT;
+    }
+    break;
+
+  case ABORTING_PUMP:
+    // Warten, bis der Anti-Drip Rückzug beendet ist, bevor der Arm wegfährt
+    if (_pump.isFinished()) {
+      Serial.println(F("[RUN] Rueckzug nach Abbruch beendet. Fahre zurueck / naechste Position."));
+      _currentTarget = -1;
+      state = IDLE;
     }
     break;
 
@@ -228,6 +247,7 @@ void Move::run(Queue &queue, LedControl &led) {
 }
 
 void Move::toZero() {
+  _pump.stop(); // Sicherstellen, dass die Pumpe aus ist
   if (_currentArmAngle != SERVO_PARK_POS) {
     uint16_t diff = abs(_currentArmAngle - SERVO_PARK_POS);
     _expectedMoveDuration = (uint16_t)(((unsigned long)diff * SERVO_SPEED_TIME) / 180) + 50;
@@ -237,6 +257,16 @@ void Move::toZero() {
     _isParking = true;
     _parkStartTime = millis();
   }
+}
+
+void Move::update() {
+  _pump.update();
+}
+
+void Move::stopPump() {
+  _pump.stop();
+  digitalWrite(PIN_PUMP_TASTER_LAMP, LOW);
+  digitalWrite(PIN_LEDS_TOWER, LOW);
 }
 
 void Move::detach() {
@@ -266,11 +296,10 @@ void Move::attach(uint8_t pin) {
 }
 
 void Move::begin() {
-  pinMode(PIN_PUMP_RELAY, OUTPUT);
+  _pump.begin(); // Initialisiert Schrittmotor-Pins und TMC2209 Treiber
   pinMode(PIN_PUMP_TASTER, INPUT_PULLUP);
   pinMode(PIN_PUMP_TASTER_LAMP, OUTPUT);
   pinMode(PIN_LEDS_TOWER, OUTPUT);
-  digitalWrite(PIN_PUMP_RELAY, LOW); // Sicherstellen, dass das Relais zu Beginn aus ist
   digitalWrite(PIN_PUMP_TASTER_LAMP, LOW);
   digitalWrite(PIN_LEDS_TOWER, LOW);
 

@@ -36,8 +36,10 @@ void LedControl::update() {
   unsigned long now = millis();
   unsigned long elapsed = now - _lastUpdate;
 
-  // Mindestens 10ms zwischen Updates warten (max. ~100 Hz)
-  if (elapsed < 10)
+  // Mindestens 35ms zwischen Updates warten (ca. 28 FPS).
+  // Liefert fuer das Auge absolut fluessige Wellen- und Fade-Animationen,
+  // reduziert aber FastLED-Interruptsperren um ueber 70%, damit der Schrittmotor ruhig laeuft!
+  if (elapsed < 35)
     return;
   _lastUpdate = now;
 
@@ -296,7 +298,15 @@ void LedControl::showStandbyPulse(const CRGB &col) {
     _standbyStart = millis();
   }
 
-  unsigned long t = millis() - _standbyStart;
+  // Bildwiederholrate auf ca. 30 FPS begrenzen, um FastLED-Interruptsperren zu minimieren
+  static unsigned long lastPulseShow = 0;
+  unsigned long now = millis();
+  if (now - lastPulseShow < 33) {
+    return;
+  }
+  lastPulseShow = now;
+
+  unsigned long t = now - _standbyStart;
 
   // Weicher sinusförmiger Atem-Effekt
   // +192 sorgt dafür, dass der Sinus genau bei seinem Minimum (0) startet.

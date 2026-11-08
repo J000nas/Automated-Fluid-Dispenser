@@ -3,19 +3,20 @@
 #include "CupSensorManager.h"
 #include "LedControl.h"
 #include "Queue.h"
+#include "StepperPump.h"
 #include "config.h"
 #include <Arduino.h>
 #include <MobaTools.h>
 
 /**
  * @class Move
- * @brief Steuert den Servo-Motor, die Befüllungspumpe und liest den Status der
+ * @brief Steuert den Servo-Motor, die Befüllungspumpe (StepperPump) und liest den Status der
  * Bechersensoren aus.
  *
  * Diese Klasse implementiert die Haupt-Zustandsmaschine (State Machine) für den
  * Bewegungs- und Abfüllprozess. Sie fragt die Stellplatzsensoren ab, fügt
- * belegte Plätze der Warteschlange (Queue) hinzu und steuert den Servo-Arm zur
- * Abfüllung an.
+ * belegte Plätze der Warteschlange (Queue) hinzu, steuert den Servo-Arm zur
+ * Abfüllung an und steuert die Schrittmotor-Pumpe (StepperPump).
  */
 class Move {
 public:
@@ -43,13 +44,14 @@ public:
   /**
    * @brief Ermöglicht das manuelle Vorpumpen/Spülen über einen Taster.
    *
-   * Liest den Zustand von `PIN_PUMP_TASTER` ein, entprellt diesen und schaltet
-   * das Pumpenrelais entsprechend direkt an oder aus.
+   * Liest den Zustand von `PIN_PUMP_TASTER` ein, entprellt diesen und steuert
+   * die StepperPump entsprechend direkt an. Beim Loslassen des Tasters wird
+   * automatisch ein Anti-Drip Rückzug ausgeführt, um Nachtropfen zu verhindern.
    */
   void pump();
 
   /**
-   * @brief Initialisiert die Hardware-Pins für das Pumpenrelais und den
+   * @brief Initialisiert die Hardware-Pins für die Schrittmotorpumpe und den
    * manuellen Pumpentaster.
    */
   void begin();
@@ -61,8 +63,9 @@ public:
    * - IDLE: Wartet auf Einträge in der Queue oder fährt zurück zur
    * Nullposition.
    * - MOVING: Wartet, bis der Servo die Zielposition erreicht hat.
-   * - WAITING_PUMP: Aktiviert die Pumpe für eine definierte Zeit
-   * (WAIT_TIME_PUMP).
+   * - WAITING_PUMP: Aktiviert die Schrittmotor-Pumpe für eine definierte Zeit
+   * (WAIT_TIME_PUMP mit Rampe und Anti-Drip Rückzug).
+   * - ABORTING_PUMP: Saugt bei vorzeitig entnommenem Glas sofort den Tropfen ein (Anti-Drip), bevor der Arm wegfährt.
    * - WAITING_NEXT: Hält den Servo nach dem Pumpen noch kurz an
    * (Gesamtwartezeit WAIT_TIME) und löscht danach die Position aus der Queue.
    *
@@ -73,7 +76,27 @@ public:
   void run(Queue &queue, LedControl &led);
 
   /**
-   * @brief Fährt den Servo in die Park- bzw. Nullposition (0 Grad).
+   * @brief Takten der internen Schrittmotor-Pumpe. Muss zyklisch im loop() aufgerufen werden.
+   */
+  void update();
+
+  /**
+   * @brief Stoppt die Pumpe sofort und schaltet zugehörige Lampen aus.
+   */
+  void stopPump();
+
+  /**
+   * @brief Prüft, ob die Schrittmotor-Pumpe aktuell aktiv ist.
+   */
+  bool isPumpRunning() const { return _pump.isRunning(); }
+
+  /**
+   * @brief Zugriff auf die zugrundeliegende StepperPump-Instanz.
+   */
+  StepperPump &getPump() { return _pump; }
+
+  /**
+   * @brief Fährt den Servo in die Park- bzw. Nullposition (0 Grad) und stoppt die Pumpe.
    */
   void toZero();
 
@@ -108,6 +131,7 @@ private:
 
   MoToServo
       _servo1; ///< Der MobaTools-Servo für die physische Arm-Positionierung
+  StepperPump _pump; ///< Schrittmotor-Pumpe für präzises Dosieren und Anti-Drip
   int16_t _currentTarget = -1; ///< Aktuell angefahrene Servoposition (-1 = keine)
   int16_t _currentArmAngle = SERVO_PARK_POS; ///< Verlässliche interne Arm-Position (SERVO_PARK_POS = Parkposition)
   uint16_t _expectedMoveDuration = 0; ///< Errechnete Mindest-Fahrzeit in ms für die aktuelle Strecke

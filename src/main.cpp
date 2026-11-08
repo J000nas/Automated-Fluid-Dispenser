@@ -142,10 +142,23 @@ void setup() {
 }
 
 void loop() {
-  // Immer den Cupsensor aktualisieren (wichtig für Baseline-Drift-Tracking im
-  // Standby)
-  sensorManager.update();
-  printDebugStatus(sensorManager, queue); // Debug-Ausgabe für Glaserkennung
+  // Schrittmotor-Pumpe bei jedem Durchlauf takten
+  move.update();
+
+  // Cupsensor zeitgesteuert abfragen (im Standby alle 40ms, waehrend des Pumpens alle 100ms)
+  // Das entlastet den I2C-Bus massiv und garantiert maximale Taktfrequenz fuer den Schrittmotor!
+  static unsigned long lastSensorUpdate = 0;
+  unsigned long now = millis();
+  unsigned long sensorInterval = move.isPumpRunning() ? 150 : 40;
+  if (now - lastSensorUpdate >= sensorInterval) {
+    lastSensorUpdate = now;
+    sensorManager.update();
+    move.update();
+  }
+
+  if (!move.isPumpRunning()) {
+    printDebugStatus(sensorManager, queue); // Debug-Ausgabe fuer Glaserkennung (nur wenn nicht gepumpt wird)
+  }
 
   // Beleuchtungs-Taster abfragen (RKL / FRONT_BACK)
   TasterLamp();
@@ -182,11 +195,13 @@ void loop() {
         queue, led,
         sensorManager);   // Bechersensoren auswerten und in Queue eintragen
     move.run(queue, led); // Abfüll-Ablaufsteuerung takten
+    move.update();        // Schrittmotor vor dem LED-Update takten
     led.update();         // LED-Animationen berechnen (Fading, Wellen)
-    queue.printQueue();   // Warteschlange im Intervall seriell ausgeben
+    move.update();        // Schrittmotor unmittelbar nach dem LED-Update takten
+    if (!move.isPumpRunning()) {
+      queue.printQueue();   // Warteschlange im Intervall seriell ausgeben
+    }
     help_pump = true;
-    delay(5); // Kleiner Delay zur Entlastung (erhöht Loop-Frequenz für flüssige
-              // LED-Animationen)
 
   }
   // =========================================================================
@@ -205,9 +220,7 @@ void loop() {
 
     // Wenn das System gestoppt wurde, Pumpe ausschalten und Servo parken
     if (help_pump) {
-      digitalWrite(PIN_PUMP_RELAY, LOW);
-      digitalWrite(PIN_PUMP_TASTER_LAMP, LOW);
-      digitalWrite(PIN_LEDS_TOWER, LOW);
+      move.stopPump();
       help_pump = false;
       move.toZero();
     }
@@ -218,8 +231,8 @@ void loop() {
     // Im Standby-Modus manuelles Vorpumpen/Spülen via Taster erlauben
     move.pump();
 
-    // Weiches blaues Pulsieren (Atem-Effekt) aller Stellplatz-LEDs im
-    // Standby-Modus
+    // Weiches blaues Pulsieren (Atem-Effekt) aller Stellplatz-LEDs im Standby-Modus
+    // (laeuft jetzt dank 33ms Frame-Limiter auch waehrend des manuellen Pumpens stoerungsfrei weiter)
     led.showStandbyPulse(CRGB::Blue);
 
     // Starttaster-Lampe stufenlos & synchron zum Pulsieren der LEDs dimmen
